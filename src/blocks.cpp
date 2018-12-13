@@ -1,16 +1,19 @@
 #include <blocks.hpp>
+#include <gamestate.hpp>
+
+#include <states/main.hpp>
 
 #ifdef __EMSCRIPTEN__
 #	include <emscripten.h>
 #endif
 
-BlocksApplication* BlocksApplication::instance_ = nullptr;
+Application* Application::instance_ = nullptr;
 
 typedef struct s_main_loop_context_t
 {
 #ifdef __EMSCRIPTEN__
-	BlocksApplication* app;
-	void (BlocksApplication::*func)(void* arg);
+	Application* app;
+	void (Application::*func)(void* arg);
 #endif
 
 	double newTime;
@@ -19,21 +22,45 @@ typedef struct s_main_loop_context_t
 	double acc;
 } MainLoopContext;
 
-BlocksApplication* BlocksApplication::GetInstance(void)
+Application* Application::GetInstance(void)
 {
 	if (!instance_)
-		instance_ = new BlocksApplication();
+		instance_ = new Application();
 
 	return instance_;
 }
 
-BlocksApplication::BlocksApplication(void) :
-	window_(nullptr), renderer_(nullptr), tileSheet_(nullptr), isRunning_(false), smooth_(0), ticks_(0), time_(0)
+Application::Application(void) :
+	window_(nullptr), renderer_(nullptr), tileSheet_(nullptr), 
+	tileRects_(nullptr), target_(nullptr), isRunning_(false), 
+	smooth_(0), ticks_(0), time_(0),
+	gameStates_(nullptr), currentGameState_(nullptr)
 {
 }
 
-BlocksApplication::~BlocksApplication(void)
+Application::~Application(void)
 {
+	if (currentGameState_)
+	{
+		currentGameState_ = nullptr;
+	}
+	
+	if (gameStates_)
+	{
+		BaseGameState** ptr = gameStates_;
+		
+		while (ptr && *ptr)
+		{
+			delete *ptr;
+			*ptr = nullptr;
+			
+			ptr++;
+		}
+	
+		delete [] gameStates_;
+		gameStates_ = nullptr;
+	}
+	
 	if (tileSheet_)
 	{
 		SDL_DestroyTexture(tileSheet_);
@@ -65,37 +92,37 @@ BlocksApplication::~BlocksApplication(void)
 	}
 }
 
-void BlocksApplication::Stop(void)
+void Application::Stop(void)
 {
 	isRunning_ = false;
 }
 
-bool BlocksApplication::IsRunning(void) const
+bool Application::IsRunning(void) const
 {
 	return isRunning_;
 }
 
-ticks_t BlocksApplication::GetTickCount(void) const
+ticks_t Application::GetTickCount(void) const
 {
 	return ticks_;
 }
 
-gametime_t BlocksApplication::GetGameTime(void) const
+gametime_t Application::GetGameTime(void) const
 {
 	return time_;
 }
 
-SDL_Renderer* BlocksApplication::GetRenderer(void)
+SDL_Renderer* Application::GetRenderer(void)
 {
 	return renderer_;
 }
 
-SDL_Window* BlocksApplication::GetWindow(void)
+SDL_Window* Application::GetWindow(void)
 {
 	return window_;
 }
 
-bool BlocksApplication::InitializeSDL(bool fullscreen)
+bool Application::InitializeSDL(bool fullscreen)
 {
 	bool ret = true;
 
@@ -108,7 +135,7 @@ bool BlocksApplication::InitializeSDL(bool fullscreen)
 		}
 		else
 		{
-			window_ = SDL_CreateWindow("Game", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, fullscreen ? SDL_WINDOW_FULLSCREEN : 0);
+			window_ = SDL_CreateWindow(WINDOW_TITLE, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, fullscreen ? SDL_WINDOW_FULLSCREEN : 0);
 
 			if (!window_)
 			{
@@ -131,11 +158,16 @@ bool BlocksApplication::InitializeSDL(bool fullscreen)
 	return ret;
 }
 
-void BlocksApplication::InitializeResources(void)
+void Application::InitializeResources(void)
 {
+	if (!target_)
+	{
+		target_ = SDL_CreateTexture(renderer_, SDL_PIXELFORMAT_RGB888, SDL_TEXTUREACCESS_TARGET, WINDOW_WIDTH, WINDOW_HEIGHT);
+	}
+
 	if (!tileSheet_)
 	{
-		SDL_Surface* surf = SDL_LoadBMP("../assets/sheet.bmp");
+		SDL_Surface* surf = SDL_LoadBMP("./assets/sheet.bmp");
 
 		if (surf)
 		{
@@ -167,7 +199,30 @@ void BlocksApplication::InitializeResources(void)
 			}
 
 			SDL_FreeSurface(surf);
+			
+			fprintf(stdout, "Loaded tileset successfully!");
 		}
+		else
+		{
+			fprintf(stderr, "Failed to load tileset!\n");
+		}
+	}
+}
+
+void Application::InitializeStates(void)
+{
+	gameStates_ = new BaseGameState*[2];
+	gameStates_[0] = new GameStateMain(this);
+	gameStates_[1] = nullptr;
+	
+	currentGameState_ = GetGameState("GameState.Main");
+	
+	BaseGameState** ptr = gameStates_;
+	
+	while (ptr && *ptr)
+	{
+		(*ptr)->OnInitialize();
+		ptr++;
 	}
 }
 
@@ -180,7 +235,7 @@ void MainLoopExtern(void* arg)
 }
 #endif
 
-void BlocksApplication::MainLoop(void* arg)
+void Application::MainLoop(void* arg)
 {
 	MainLoopContext* context = static_cast<MainLoopContext*>(arg);
 
@@ -215,11 +270,13 @@ void BlocksApplication::MainLoop(void* arg)
 				Stop();
 				break;
 			case SDL_KEYUP:
+#ifndef __EMSCRIPTEN__
 				if (event.key.keysym.sym == SDLK_ESCAPE)
 				{
 					Stop();
 				}
 				else
+#endif
 				{
 					HandleInput(event, false);
 				}
@@ -230,7 +287,7 @@ void BlocksApplication::MainLoop(void* arg)
 			}
 		}
 
-		HandleUpdate((float)FRAMES_ONE_STEP);
+		HandleUpdate((real)FRAMES_ONE_STEP);
 
 		context->acc -= FRAMES_ONE_STEP;
 
@@ -238,17 +295,22 @@ void BlocksApplication::MainLoop(void* arg)
 		ticks_ += 1;
 	}
 
-	smooth_ = (float)(context->acc / FRAMES_ONE_STEP);
+	smooth_ = (real)(context->acc / FRAMES_ONE_STEP);
 
+	SDL_SetRenderTarget(renderer_, target_);
+
+	HandleDraw(smooth_);
+
+	SDL_SetRenderTarget(renderer_, nullptr);
 	SDL_SetRenderDrawColor(renderer_, 0x00, 0x00, 0x00, 0x00);
 	SDL_RenderClear(renderer_);
 
-	HandleRender();
+	SDL_RenderCopy(renderer_, target_, nullptr, nullptr);
 
 	SDL_RenderPresent(renderer_);
 }
 
-int BlocksApplication::Run(bool fullscreen)
+int Application::Run(bool fullscreen)
 {
 	int ret = 0;
 
@@ -259,6 +321,7 @@ int BlocksApplication::Run(bool fullscreen)
 	else
 	{
 		InitializeResources();
+		InitializeStates();
 
 		isRunning_ = true;
 
@@ -290,25 +353,143 @@ int BlocksApplication::Run(bool fullscreen)
 	return ret;
 }
 
-void BlocksApplication::HandleUpdate(float delta)
+void Application::HandleInput(SDL_Event& event, bool down)
 {
+	if (currentGameState_)
+	{
+		currentGameState_->OnInput(event, down);
+	}
 }
 
-void BlocksApplication::HandleInput(SDL_Event& event, bool down)
+void Application::HandleUpdate(real delta)
 {
+	if (currentGameState_)
+	{
+		currentGameState_->OnUpdate(delta);
+	}
 }
 
-void BlocksApplication::HandleRender(void)
+void Application::HandleDraw(real smooth)
+{
+	if (currentGameState_)
+	{
+		currentGameState_->OnDraw();
+	}
+}
+
+void Application::DrawTile(int x, int y, int tile)
 {
 	SDL_Rect r;
-	r.x = r.y = 0;
+	
+	r.x = (x * TILE_SIZE);
+	r.y = (y * TILE_SIZE);
 	r.w = r.h = TILE_SIZE;
-	SDL_RenderCopy(renderer_, tileSheet_, &tileRects_[TILE_BOX_BOT_RIGHT], &r);
+
+	SDL_RenderCopy(renderer_, tileSheet_, &tileRects_[tile], &r);
+}
+
+void Application::DrawString(int x, int y, const char* str)
+{
+	size_t len = strnlen(str, 0xFF);
+
+	if (len > 0)
+	{
+		int strX = x;
+		int strY = y;
+
+		for (size_t i = 0; i < len; i++)
+		{
+			int idx = 0;
+
+			if (str[i] >= 'A' && str[i] <= 'Z')
+			{
+				idx = (str[i] - 'A') + TILE_TEXT;
+			}
+			else if (str[i] >= 'a' && str[i] <= 'z')
+			{
+				idx = (str[i] - 'a') + TILE_TEXT;
+			}
+			else if (str[i] >= '0' && str[i] <= '9')
+			{
+				idx = (str[i] - '0') + TILE_NUMBER;
+			}
+			else if (str[i] == ' ')
+			{
+				strX++;
+			}
+			else if (str[i] == '\t')
+			{
+				strX += 4;
+			}
+			else if (str[i] == '\n' || str[i] == '\r')
+			{
+				strX = x;
+				strY++;
+			}
+
+			if (idx)
+			{
+				DrawTile(strX++, strY, idx);
+			}
+		}
+	}
+}
+
+void Application::DrawBox(int x, int y, int w, int h)
+{
+	int ix, iy;
+
+	for (ix = x + 1; ix < (x + w) - 1; ix++)
+	{
+		DrawTile(ix, y, TILE_BOX_TOP);
+		DrawTile(ix, (y + h) - 1, TILE_BOX_BOT);
+	}
+
+	for (iy = y + 1; iy < (y + h) - 1; iy++)
+	{
+		DrawTile(x, iy, TILE_BOX_LEFT);
+		DrawTile((x + w) - 1, iy, TILE_BOX_RIGHT);
+	}
+
+	DrawTile(x, y, TILE_BOX_TOP_LEFT);
+	DrawTile((x + w) - 1, y, TILE_BOX_TOP_RIGHT);
+
+	DrawTile(x, (y + h) - 1, TILE_BOX_BOT_LEFT);
+	DrawTile((x + w) - 1, (y + h) - 1, TILE_BOX_BOT_RIGHT);
+}
+
+BaseGameState** Application::GetGameStates(void)
+{
+	return gameStates_;
+}
+
+BaseGameState* Application::GetGameState(const char* szStateName)
+{
+	BaseGameState** ptr = gameStates_;
+	BaseGameState* result = nullptr;
+	
+	while (ptr && *ptr)
+	{
+		if (strncmp((*ptr)->GetStateName(), szStateName, 0xFF) == 0)
+		{
+			result = *ptr;
+			break;
+		}
+		
+		ptr++;
+	}
+	
+	return result;
+}
+
+BaseGameState* Application::GetGameState(void)
+{
+	return currentGameState_;
 }
 
 int main(int argc, char* argv[])
 {
-	BlocksApplication* app = BlocksApplication::GetInstance();
+	Application* app = Application::GetInstance();
 
 	int ret = 0;
 
