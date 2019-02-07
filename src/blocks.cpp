@@ -1,7 +1,9 @@
 #include <blocks.hpp>
+#include <shapes.hpp>
 #include <gamestate.hpp>
 
-#include <states/main.hpp>
+#include <states/gs_main_menu.hpp>
+#include <states/gs_game_play.hpp>
 
 #ifdef __EMSCRIPTEN__
 #	include <emscripten.h>
@@ -211,11 +213,12 @@ void Application::InitializeResources(void)
 
 void Application::InitializeStates(void)
 {
-	gameStates_ = new BaseGameState*[2];
-	gameStates_[0] = new GameStateMain(this);
-	gameStates_[1] = nullptr;
+	gameStates_ = new BaseGameState*[3];
+	gameStates_[0] = new GameStateMainMenu(this);
+	gameStates_[1] = new GameStateGamePlay(this);
+	gameStates_[2] = nullptr;
 	
-	currentGameState_ = GetGameState("GameState.Main");
+	currentGameState_ = GetGameState("GameState.MainMenu");
 	
 	BaseGameState** ptr = gameStates_;
 	
@@ -302,6 +305,7 @@ void Application::MainLoop(void* arg)
 	HandleDraw(smooth_);
 
 	SDL_SetRenderTarget(renderer_, nullptr);
+	SDL_SetRenderDrawBlendMode(renderer_, SDL_BLENDMODE_BLEND);
 	SDL_SetRenderDrawColor(renderer_, 0x00, 0x00, 0x00, 0x00);
 	SDL_RenderClear(renderer_);
 
@@ -458,6 +462,29 @@ void Application::DrawBox(int x, int y, int w, int h)
 	DrawTile((x + w) - 1, (y + h) - 1, TILE_BOX_BOT_RIGHT);
 }
 
+void Application::DrawShadowBox(int x, int y, int w, int h)
+{
+	int ix, iy;
+
+	for (ix = x + 1; ix < (x + w) - 1; ix++)
+	{
+		DrawTile(ix, y, TILE_SHDW_BOX_TOP);
+		DrawTile(ix, (y + h) - 1, TILE_SHDW_BOX_BOT);
+	}
+
+	for (iy = y + 1; iy < (y + h) - 1; iy++)
+	{
+		DrawTile(x, iy, TILE_SHDW_BOX_LEFT);
+		DrawTile((x + w) - 1, iy, TILE_SHDW_BOX_RIGHT);
+	}
+
+	DrawTile(x, y, TILE_SHDW_BOX_TOP_LEFT);
+	DrawTile((x + w) - 1, y, TILE_SHDW_BOX_TOP_RIGHT);
+
+	DrawTile(x, (y + h) - 1, TILE_SHDW_BOX_BOT_LEFT);
+	DrawTile((x + w) - 1, (y + h) - 1, TILE_SHDW_BOX_BOT_RIGHT);
+}
+
 BaseGameState** Application::GetGameStates(void)
 {
 	return gameStates_;
@@ -487,10 +514,35 @@ BaseGameState* Application::GetGameState(void)
 	return currentGameState_;
 }
 
+BaseGameState* Application::SetGameState(BaseGameState* state)
+{
+	if (currentGameState_ != state)
+	{
+		if (currentGameState_)
+		{
+			currentGameState_->OnSuspend(state);
+		}
+		
+		state->OnResume(currentGameState_);
+		currentGameState_ = state;
+	}
+}
+
+BaseGameState* Application::SetGameState(const char* szStateName)
+{
+	BaseGameState* newState = GetGameState(szStateName);
+	
+	if (newState)
+	{
+		SetGameState(newState);
+	}
+}
+
 int main(int argc, char* argv[])
 {
 	Application* app = Application::GetInstance();
 
+	//unsigned char sh = (SHAPES[4].data[1])[12];
 	int ret = 0;
 
 	if (!app)

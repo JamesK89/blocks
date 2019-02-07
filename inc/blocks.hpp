@@ -37,20 +37,26 @@ using namespace std;
 #define TILE_BOX_BOT		59
 #define TILE_BOX_BOT_RIGHT	60
 
-#define TILE_SHDW_BOX_TOP_LEFT	0
-#define TILE_SHDW_BOX_TOP		1
-#define TILE_SHDW_BOX_TOP_RIGHT	2
-#define TILE_SHDW_BOX_LEFT		29
-#define TILE_SHDW_BOX_RIGHT		31
-#define TILE_SHDW_BOX_BOT_LEFT	58
-#define TILE_SHDW_BOX_BOT		59
-#define TILE_SHDW_BOX_BOT_RIGHT	60
+#define TILE_SHDW_BOX_TOP_LEFT	87
+#define TILE_SHDW_BOX_TOP		88
+#define TILE_SHDW_BOX_TOP_RIGHT	89
+#define TILE_SHDW_BOX_LEFT		116
+#define TILE_SHDW_BOX_RIGHT		118
+#define TILE_SHDW_BOX_BOT_LEFT	145
+#define TILE_SHDW_BOX_BOT		146
+#define TILE_SHDW_BOX_BOT_RIGHT	147
 
 #define TILE_BLOCK_RED	61
 #define TILE_BLOCK_BLU	62
 #define TILE_BLOCK_YEL	63
 #define TILE_BLOCK_GRN	64
 #define TILE_BLOCK_GRY	65
+#define TILE_BLOCK_PUR	66
+#define TILE_BLOCK_ORG	67
+
+#define TILE_CURSOR			90
+#define TILE_CURSOR_LEFT	91
+#define TILE_CURSOR_RIGHT	92
 
 typedef	unsigned long long ticks_t;
 typedef double gametime_t;
@@ -77,6 +83,7 @@ public:
 	void DrawTile(int x, int y, int tile);
 	void DrawString(int x, int y, const char* str);
 	void DrawBox(int x, int y, int w, int h);
+	void DrawShadowBox(int x, int y, int w, int h);
 
 	ticks_t GetTickCount(void) const;
 	gametime_t GetGameTime(void) const;
@@ -87,6 +94,9 @@ public:
 	BaseGameState** GetGameStates(void);
 	BaseGameState* GetGameState(const char* szStateName);
 	BaseGameState* GetGameState(void);
+	
+	BaseGameState* SetGameState(const char* szStateName);
+	BaseGameState* SetGameState(BaseGameState* state);
 
 private:
 

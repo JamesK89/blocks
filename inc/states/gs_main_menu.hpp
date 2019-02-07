@@ -1,16 +1,17 @@
 #pragma once
-#ifndef _INCLUDE_GAMESTATE_MAIN_H_
-#define _INCLUDE_GAMESTATE_MAIN_H_
+#ifndef _INCLUDE_GAMESTATE_MAINMENU_H_
+#define _INCLUDE_GAMESTATE_MAINMENU_H_
 
 #include <blocks.hpp>
 #include <gamestate.hpp>
+#include <shapes.hpp>
 
-class GameStateMain : public BaseGameState
+class GameStateMainMenu : public BaseGameState
 {
 public:
 
-	GameStateMain(Application* app);
-	virtual ~GameStateMain(void);
+	GameStateMainMenu(Application* app);
+	virtual ~GameStateMainMenu(void);
 	
 	virtual const char* GetStateName(void) const;
 	
@@ -24,7 +25,11 @@ public:
 	virtual void OnInitialize(void);
 	
 protected:
+	Shape* shape_;
+
 	unsigned int menuOption_;
+	
+	void OnMenuOptionSelect(int option);
 };
 
 #endif

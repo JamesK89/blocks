@@ -1,21 +1,21 @@
 #include <blocks.hpp>
 #include <states/gs_main_menu.hpp>
 
-GameStateMain::GameStateMain(Application* app)
+GameStateMainMenu::GameStateMainMenu(Application* app)
 	: BaseGameState(app), menuOption_(0)
 {	
 }
 
-GameStateMain::~GameStateMain(void)
+GameStateMainMenu::~GameStateMainMenu(void)
 {
 }
 
-const char* GameStateMain::GetStateName(void) const
+const char* GameStateMainMenu::GetStateName(void) const
 {
-	return "GameState.Main";
+	return "GameState.MainMenu";
 }
 
-void GameStateMain::OnInput(SDL_Event& evt, bool down)
+void GameStateMainMenu::OnInput(SDL_Event& evt, bool down)
 {
 	if (down)
 	{
@@ -30,45 +30,57 @@ void GameStateMain::OnInput(SDL_Event& evt, bool down)
 				menuOption_ %= 2;
 			break;
 			case SDLK_RETURN:
-				if (menuOption_ == 1)
-				{
-					app_->Stop();
-				}
+				OnMenuOptionSelect(menuOption_);
 			break;
 		}
 	}
 }
 
-void GameStateMain::OnUpdate(real delta)
+void GameStateMainMenu::OnUpdate(real delta)
 {
 }
 
-void GameStateMain::OnDraw(void)
+void GameStateMainMenu::OnDraw(void)
 {
 	SDL_SetRenderDrawColor(app_->GetRenderer(), 0x00, 0x00, 0x00, 0x00);
 	SDL_RenderClear(app_->GetRenderer());
 
 	app_->DrawBox(0, 0, (WINDOW_WIDTH / TILE_SIZE), (WINDOW_HEIGHT / TILE_SIZE));
-	app_->DrawBox(1, 3, (WINDOW_WIDTH / TILE_SIZE) - 2, (WINDOW_HEIGHT / TILE_SIZE) - 4);
-	app_->DrawString(1, 1, "Blocks");
+	app_->DrawString(7, 1, "Blocks");
 	
-	app_->DrawString(3, 4, "Start");
-	app_->DrawString(3, 5, "Exit");
+	app_->DrawString(7, 4, "Start");
+	app_->DrawString(7, 5, "Exit");
 	
 	if ((app_->GetTickCount() % 24) > 12)
 	{
-		app_->DrawTile(2, 4 + menuOption_, TILE_CURSOR_LEFT);
+		app_->DrawTile(6, 4 + menuOption_, TILE_CURSOR_LEFT);
 	}
+	
+	shape_->Draw();
 }
 
-void GameStateMain::OnSuspend(BaseGameState* newState)
+void GameStateMainMenu::OnSuspend(BaseGameState* newState)
 {
 }
 
-void GameStateMain::OnResume(BaseGameState* oldState)
+void GameStateMainMenu::OnResume(BaseGameState* oldState)
 {
 }
 
-void GameStateMain::OnInitialize(void)
+void GameStateMainMenu::OnInitialize(void)
 {
+	shape_ = new Shape(app_, &SHAPES[4]);
+}
+
+void GameStateMainMenu::OnMenuOptionSelect(int option)
+{
+	switch (option)
+	{
+		case 0:
+			app_->SetGameState("GameState.GamePlay");
+		break;
+		case 1:
+			app_->Stop();
+		break;
+	}
 }

@@ -13,7 +13,7 @@ CurrentFileName        :=
 CurrentFilePath        :=
 CurrentFileFullPath    :=
 User                   :=James John Kelly Jr.
-Date                   :=13/12/18
+Date                   :=07/02/19
 CodeLitePath           :=/home/james/.codelite
 LinkerName             :=/usr/bin/g++
 SharedObjectLinkerName :=/usr/bin/g++ -shared -fPIC
@@ -60,7 +60,7 @@ AS       := /usr/bin/as
 ## User defined environment variables
 ##
 CodeLiteDir:=/usr/share/codelite
-Objects0=$(IntermediateDirectory)/src_states_main.cpp$(ObjectSuffix) $(IntermediateDirectory)/src_blocks.cpp$(ObjectSuffix) $(IntermediateDirectory)/src_vector3.cpp$(ObjectSuffix) 
+Objects0=$(IntermediateDirectory)/src_states_gs_game_play.cpp$(ObjectSuffix) $(IntermediateDirectory)/src_states_gs_main_menu.cpp$(ObjectSuffix) $(IntermediateDirectory)/src_vector3.cpp$(ObjectSuffix) $(IntermediateDirectory)/src_shapes.cpp$(ObjectSuffix) $(IntermediateDirectory)/src_blocks.cpp$(ObjectSuffix) 
 
 
 
@@ -91,21 +91,21 @@ PreBuild:
 ##
 ## Objects
 ##
-$(IntermediateDirectory)/src_states_main.cpp$(ObjectSuffix): src/states/main.cpp $(IntermediateDirectory)/src_states_main.cpp$(DependSuffix)
-	$(CXX) $(IncludePCH) $(SourceSwitch) "/home/james/Source/Portfolio/Blocks/src/states/main.cpp" $(CXXFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/src_states_main.cpp$(ObjectSuffix) $(IncludePath)
-$(IntermediateDirectory)/src_states_main.cpp$(DependSuffix): src/states/main.cpp
-	@$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) -MG -MP -MT$(IntermediateDirectory)/src_states_main.cpp$(ObjectSuffix) -MF$(IntermediateDirectory)/src_states_main.cpp$(DependSuffix) -MM src/states/main.cpp
+$(IntermediateDirectory)/src_states_gs_game_play.cpp$(ObjectSuffix): src/states/gs_game_play.cpp $(IntermediateDirectory)/src_states_gs_game_play.cpp$(DependSuffix)
+	$(CXX) $(IncludePCH) $(SourceSwitch) "/home/james/Source/Portfolio/Blocks/src/states/gs_game_play.cpp" $(CXXFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/src_states_gs_game_play.cpp$(ObjectSuffix) $(IncludePath)
+$(IntermediateDirectory)/src_states_gs_game_play.cpp$(DependSuffix): src/states/gs_game_play.cpp
+	@$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) -MG -MP -MT$(IntermediateDirectory)/src_states_gs_game_play.cpp$(ObjectSuffix) -MF$(IntermediateDirectory)/src_states_gs_game_play.cpp$(DependSuffix) -MM src/states/gs_game_play.cpp
 
-$(IntermediateDirectory)/src_states_main.cpp$(PreprocessSuffix): src/states/main.cpp
-	$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/src_states_main.cpp$(PreprocessSuffix) src/states/main.cpp
+$(IntermediateDirectory)/src_states_gs_game_play.cpp$(PreprocessSuffix): src/states/gs_game_play.cpp
+	$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/src_states_gs_game_play.cpp$(PreprocessSuffix) src/states/gs_game_play.cpp
 
-$(IntermediateDirectory)/src_blocks.cpp$(ObjectSuffix): src/blocks.cpp $(IntermediateDirectory)/src_blocks.cpp$(DependSuffix)
-	$(CXX) $(IncludePCH) $(SourceSwitch) "/home/james/Source/Portfolio/Blocks/src/blocks.cpp" $(CXXFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/src_blocks.cpp$(ObjectSuffix) $(IncludePath)
-$(IntermediateDirectory)/src_blocks.cpp$(DependSuffix): src/blocks.cpp
-	@$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) -MG -MP -MT$(IntermediateDirectory)/src_blocks.cpp$(ObjectSuffix) -MF$(IntermediateDirectory)/src_blocks.cpp$(DependSuffix) -MM src/blocks.cpp
+$(IntermediateDirectory)/src_states_gs_main_menu.cpp$(ObjectSuffix): src/states/gs_main_menu.cpp $(IntermediateDirectory)/src_states_gs_main_menu.cpp$(DependSuffix)
+	$(CXX) $(IncludePCH) $(SourceSwitch) "/home/james/Source/Portfolio/Blocks/src/states/gs_main_menu.cpp" $(CXXFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/src_states_gs_main_menu.cpp$(ObjectSuffix) $(IncludePath)
+$(IntermediateDirectory)/src_states_gs_main_menu.cpp$(DependSuffix): src/states/gs_main_menu.cpp
+	@$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) -MG -MP -MT$(IntermediateDirectory)/src_states_gs_main_menu.cpp$(ObjectSuffix) -MF$(IntermediateDirectory)/src_states_gs_main_menu.cpp$(DependSuffix) -MM src/states/gs_main_menu.cpp
 
-$(IntermediateDirectory)/src_blocks.cpp$(PreprocessSuffix): src/blocks.cpp
-	$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/src_blocks.cpp$(PreprocessSuffix) src/blocks.cpp
+$(IntermediateDirectory)/src_states_gs_main_menu.cpp$(PreprocessSuffix): src/states/gs_main_menu.cpp
+	$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/src_states_gs_main_menu.cpp$(PreprocessSuffix) src/states/gs_main_menu.cpp
 
 $(IntermediateDirectory)/src_vector3.cpp$(ObjectSuffix): src/vector3.cpp $(IntermediateDirectory)/src_vector3.cpp$(DependSuffix)
 	$(CXX) $(IncludePCH) $(SourceSwitch) "/home/james/Source/Portfolio/Blocks/src/vector3.cpp" $(CXXFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/src_vector3.cpp$(ObjectSuffix) $(IncludePath)
@@ -114,6 +114,22 @@ $(IntermediateDirectory)/src_vector3.cpp$(DependSuffix): src/vector3.cpp
 
 $(IntermediateDirectory)/src_vector3.cpp$(PreprocessSuffix): src/vector3.cpp
 	$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/src_vector3.cpp$(PreprocessSuffix) src/vector3.cpp
+
+$(IntermediateDirectory)/src_shapes.cpp$(ObjectSuffix): src/shapes.cpp $(IntermediateDirectory)/src_shapes.cpp$(DependSuffix)
+	$(CXX) $(IncludePCH) $(SourceSwitch) "/home/james/Source/Portfolio/Blocks/src/shapes.cpp" $(CXXFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/src_shapes.cpp$(ObjectSuffix) $(IncludePath)
+$(IntermediateDirectory)/src_shapes.cpp$(DependSuffix): src/shapes.cpp
+	@$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) -MG -MP -MT$(IntermediateDirectory)/src_shapes.cpp$(ObjectSuffix) -MF$(IntermediateDirectory)/src_shapes.cpp$(DependSuffix) -MM src/shapes.cpp
+
+$(IntermediateDirectory)/src_shapes.cpp$(PreprocessSuffix): src/shapes.cpp
+	$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/src_shapes.cpp$(PreprocessSuffix) src/shapes.cpp
+
+$(IntermediateDirectory)/src_blocks.cpp$(ObjectSuffix): src/blocks.cpp $(IntermediateDirectory)/src_blocks.cpp$(DependSuffix)
+	$(CXX) $(IncludePCH) $(SourceSwitch) "/home/james/Source/Portfolio/Blocks/src/blocks.cpp" $(CXXFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/src_blocks.cpp$(ObjectSuffix) $(IncludePath)
+$(IntermediateDirectory)/src_blocks.cpp$(DependSuffix): src/blocks.cpp
+	@$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) -MG -MP -MT$(IntermediateDirectory)/src_blocks.cpp$(ObjectSuffix) -MF$(IntermediateDirectory)/src_blocks.cpp$(DependSuffix) -MM src/blocks.cpp
+
+$(IntermediateDirectory)/src_blocks.cpp$(PreprocessSuffix): src/blocks.cpp
+	$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/src_blocks.cpp$(PreprocessSuffix) src/blocks.cpp
 
 
 -include $(IntermediateDirectory)/*$(DependSuffix)

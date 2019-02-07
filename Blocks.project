@@ -1,17 +1,26 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CodeLite_Project Name="Blocks" Version="10.0.0" InternalType="Console">
+  <Plugins>
+    <Plugin Name="qmake">
+      <![CDATA[00010001N0005Debug000000000000]]>
+    </Plugin>
+  </Plugins>
   <Description/>
   <Dependencies/>
   <VirtualDirectory Name="src">
+    <File Name="src/shapes.cpp"/>
     <VirtualDirectory Name="states">
-      <File Name="src/states/main.cpp"/>
+      <File Name="src/states/gs_game_play.cpp"/>
+      <File Name="src/states/gs_main_menu.cpp"/>
     </VirtualDirectory>
     <File Name="src/vector3.cpp"/>
     <File Name="src/blocks.cpp"/>
   </VirtualDirectory>
   <VirtualDirectory Name="inc">
+    <File Name="inc/shapes.hpp"/>
     <VirtualDirectory Name="states">
-      <File Name="inc/states/main.hpp"/>
+      <File Name="inc/states/gs_game_play.hpp"/>
+      <File Name="inc/states/gs_main_menu.hpp"/>
     </VirtualDirectory>
     <File Name="inc/vector3.hpp"/>
     <File Name="inc/gamestate.hpp"/>
