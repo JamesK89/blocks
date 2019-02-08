@@ -98,6 +98,45 @@ void Shape::GetBounds(int& topLeftX, int& topLeftY, int& botRightX, int& botRigh
 	botRightY = (y_ + SHAPE_HEIGHT) + offY_;
 }
 
+void Shape::GetInnerBounds(int& topLeftX, int& topLeftY, int& botRightX, int& botRightY) const
+{
+	int tlX = SHAPE_WIDTH + 1;
+	int tlY = SHAPE_HEIGHT + 1;
+	
+	int brX = -1;
+	int brY = -1;
+	
+	topLeftX = 0;
+	topLeftY = 0;
+	
+	botRightX = 0;
+	botRightY = 0;
+	
+	for (int ty = 0; ty < SHAPE_HEIGHT; ty++)
+	{
+		for (int tx = 0; tx < SHAPE_WIDTH; tx++)
+		{
+			bool isTile = (shapeInfo_->data[orientation_][(ty * SHAPE_WIDTH) + tx] & 1);
+			
+			if (isTile)
+			{
+				tlX = MIN(tx, tlX);
+				tlY = MIN(ty, tlY);
+				
+				brX = MAX(tx, brX);
+				brY = MAX(ty, brY);
+			}
+		}
+	}
+	
+	topLeftX = (tlX + x_) + offX_;
+	topLeftY = (tlY + y_) + offY_;
+	
+	// I have no idea why but for some reason we need to add one to get an accurate bounding box.
+	// You would think this needn't be necessary since we are using MIN and MAX above.
+	botRightX = (brX + x_) + offX_ + 1;
+	botRightY = (brY + y_) + offY_ + 1;
+}
 
 unsigned char Shape::GetShapeTile(int x, int y) const
 {

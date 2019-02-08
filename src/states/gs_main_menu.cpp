@@ -55,8 +55,6 @@ void GameStateMainMenu::OnDraw(void)
 	{
 		app_->DrawTile(6, 4 + menuOption_, TILE_CURSOR_LEFT);
 	}
-	
-	shape_->Draw();
 }
 
 void GameStateMainMenu::OnSuspend(BaseGameState* newState)
@@ -69,7 +67,6 @@ void GameStateMainMenu::OnResume(BaseGameState* oldState)
 
 void GameStateMainMenu::OnInitialize(void)
 {
-	shape_ = new Shape(app_, &SHAPES[4]);
 }
 
 void GameStateMainMenu::OnMenuOptionSelect(int option)

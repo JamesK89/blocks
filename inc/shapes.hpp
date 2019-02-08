@@ -186,12 +186,12 @@ typedef struct
 
 const ShapeInfo SHAPES[] = {
 	{'J', SHAPE_J_SIZE, TILE_BLOCK_RED, &SHAPE_J[0]},
-	{'L', SHAPE_L_SIZE, TILE_BLOCK_ORG, &SHAPE_L[0]},
+	{'L', SHAPE_L_SIZE, TILE_BLOCK_BLU, &SHAPE_L[0]},
 	{'S', SHAPE_S_SIZE, TILE_BLOCK_GRN, &SHAPE_S[0]},
-	{'Z', SHAPE_Z_SIZE, TILE_BLOCK_GRY, &SHAPE_Z[0]},
+	{'Z', SHAPE_Z_SIZE, TILE_BLOCK_ORG, &SHAPE_Z[0]},
 	{'T', SHAPE_T_SIZE, TILE_BLOCK_PUR, &SHAPE_T[0]},
 	{'O', SHAPE_O_SIZE, TILE_BLOCK_YEL, &SHAPE_O[0]},
-	{'I', SHAPE_I_SIZE, TILE_BLOCK_BLU, &SHAPE_I[0]}
+	{'I', SHAPE_I_SIZE, TILE_BLOCK_CYN, &SHAPE_I[0]}
 };
 
 class Shape
@@ -214,6 +214,7 @@ public:
 	void SetTile(int tile);
 	
 	void GetBounds(int& topLeftX, int& topLeftY, int& botRightX, int& botRightY) const;
+	void GetInnerBounds(int& topLeftX, int& topLeftY, int& botRightX, int& botRightY) const;
 	
 	unsigned char GetShapeTile(int x, int y) const;
 	

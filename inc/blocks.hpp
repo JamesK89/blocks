@@ -8,8 +8,12 @@
 #endif
 
 #include <stdio.h>
+#include <time.h>
 #include <string.h>
 #include <SDL.h>
+
+#define MIN(x,y)	(((x) < (y)) ? (x) : (y))
+#define MAX(x,y)	(((x) > (y)) ? (x) : (y))
 
 using namespace std;
 
@@ -53,6 +57,7 @@ using namespace std;
 #define TILE_BLOCK_GRY	65
 #define TILE_BLOCK_PUR	66
 #define TILE_BLOCK_ORG	67
+#define TILE_BLOCK_CYN	68
 
 #define TILE_CURSOR			90
 #define TILE_CURSOR_LEFT	91

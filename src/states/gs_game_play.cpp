@@ -16,7 +16,7 @@ GameStateGamePlay::GameStateGamePlay(Application* app)
 	numShapes_(0),
 	shapePlayed_(nullptr),
 	numCompleteLines_(0),
-	scoring_(false)
+	messages_()
 {	
 }
 
@@ -72,7 +72,6 @@ void GameStateGamePlay::OnInput(SDL_Event& evt, bool down)
 	{		
 		if (gamestate_ == GAMEPLAY_STATE_PLAYING)
 		{
-
 			if (evt.key.keysym.sym == SDLK_LEFT)
 			{
 				inputAction_ = INPUT_ACTION_SHIFT_LEFT;
@@ -98,6 +97,7 @@ void GameStateGamePlay::OnUpdate(real delta)
 	if (gamestate_ == GAMEPLAY_STATE_PLAYING)
 	{
 		nextTick_ -= delta;
+		messageTick_ -= delta;
 		
 		if (inputAction_ != INPUT_ACTION_NONE)
 		{
@@ -127,6 +127,25 @@ void GameStateGamePlay::OnUpdate(real delta)
 			
 			inputAction_ = INPUT_ACTION_NONE;
 		}
+		
+		if (messageTick_ <= 0.0f)
+		{
+			if (messages_.size() > 0)
+			{
+				messages_.pop_back();
+			}
+			
+			messageTick_ += 0.5;
+		}
+		
+		if (nextTick_ <= 0.0f)
+		{
+			OnTick();
+		}
+	}
+	else if (gamestate_ == GAMEPLAY_STATE_SCORING)
+	{
+		nextTick_ -= delta;
 		
 		if (nextTick_ <= 0.0f)
 		{
@@ -161,6 +180,19 @@ void GameStateGamePlay::OnResume(BaseGameState* oldState)
 
 void GameStateGamePlay::OnInitialize(void)
 {
+	srand(time(NULL));
+	
+	FILE* fp = fopen("/dev/urandom", "r");
+	
+	if (fp)
+	{
+		unsigned int r;
+		fread(&r, sizeof(r), 1, fp);
+		fclose(fp);
+		
+		srand(r);
+	}
+	
 	playfieldWidth_ = ((WINDOW_WIDTH / TILE_SIZE) >> 1);
 	playfieldHeight_ = (WINDOW_HEIGHT / TILE_SIZE) - 2;
 	
@@ -179,6 +211,8 @@ void GameStateGamePlay::OnInitialize(void)
 	}
 	
 	gamestate_ = GAMEPLAY_STATE_PLAYING;
+	
+	messages_.clear();
 }
 
 void GameStateGamePlay::DrawLevel(void)
@@ -199,6 +233,25 @@ void GameStateGamePlay::DrawScore(void)
 	
 	app_->DrawString(playfieldWidth_ + 3, 4, "SCORE");
 	app_->DrawString(playfieldWidth_ + 4, 5, scoreStr);
+	
+	int stringsY = ((WINDOW_HEIGHT / TILE_SIZE) - 5);
+	
+	if ((app_->GetTickCount() % 6) < 3)
+	{
+		for (vector<const char*>::iterator i = messages_.begin(); i != messages_.end(); ++i)
+		{
+			if (stringsY >= ((WINDOW_HEIGHT / TILE_SIZE) - 1))
+			{
+				break;
+			}
+			
+			const char* pStr = *i;
+			
+			app_->DrawString(playfieldWidth_ + 3, stringsY, pStr);
+			
+			stringsY++;
+		}
+	}
 }
 
 void GameStateGamePlay::DrawPlayfield()
@@ -211,7 +264,7 @@ void GameStateGamePlay::DrawPlayfield()
 		{
 			unsigned char tile = playfield_[(y * playfieldWidth_) + x];
 			
-			if (tile && (!isACompleteLine || (isACompleteLine && (app_->GetTickCount() % 12) > 6)))
+			if (tile && (!isACompleteLine || (isACompleteLine && (app_->GetTickCount() % 6) > 3)))
 			{
 				app_->DrawTile(x + 1, y + 1, tile);
 			}
@@ -265,25 +318,43 @@ void GameStateGamePlay::DrawPause()
 
 void GameStateGamePlay::OnTick(void)
 {
-	ClearCompleteLines();
-	
-	if (!currentShape_)
+	if (gamestate_ == GAMEPLAY_STATE_PLAYING)
 	{
-		SpawnShape();
-	}
-	else if (!MoveShape(currentShape_, 0, 1))
-	{
-		ImpressShapeOntoPlayfield(currentShape_);
-		currentShape_ = nullptr;
-		
-		if (CheckForCompleteLines())
+		if (!CheckForEndGame())
 		{
-			score_ += 100 * numCompleteLines_;
-			nextTick_ += 1.0;
+			ClearCompleteLines();
+			
+			if (!currentShape_)
+			{
+				SpawnShape();
+			}
+			else if (!MoveShape(currentShape_, 0, 1))
+			{
+				ImpressShapeOntoPlayfield(currentShape_);
+				currentShape_ = nullptr;
+				
+				if (CheckForCompleteLines())
+				{
+					UpdateScore();
+					nextTick_ += 1.0;
+					gamestate_ = GAMEPLAY_STATE_SCORING;
+				}
+			}
+		
+			if (gamestate_ == GAMEPLAY_STATE_PLAYING)
+				nextTick_ += 1.0;
+		}
+		else
+		{
+			gamestate_ = GAMEPLAY_STATE_GAME_OVER;
 		}
 	}
+	else if (gamestate_ == GAMEPLAY_STATE_SCORING)
+	{
+		gamestate_ = GAMEPLAY_STATE_PLAYING;
+		nextTick_ += 1.0;
+	}
 	
-	nextTick_ += 1.0;
 }
 
 void GameStateGamePlay::ClampShape(Shape* shape)
@@ -302,41 +373,22 @@ void GameStateGamePlay::ClampShape(Shape* shape)
 			int x, y;
 			
 			shape->GetPosition(x, y);
-			shape->GetBounds(tlx, tly, brx, bry);
+			shape->GetInnerBounds(tlx, tly, brx, bry);
 			
-			for (int bx = tlx; bx < brx; bx++)
+			if (tlx < 1)
 			{
-				for (int by = tly; by < bry; by++)
-				{
-					unsigned char tile = shape->GetShapeTile(bx - tlx, by - tly);
-					
-					if (tile & 1)
-					{
-						if (bx < 1)
-						{
-							shape->SetPosition(x + 1, y);
-							recheck = true;
-							break;
-						}
-						else if (bx > playfieldWidth_)
-						{
-							shape->SetPosition(x - 1, y);
-							recheck = true;
-							break;
-						}
-						else if (by > playfieldHeight_)
-						{
-							shape->SetPosition(x, y - 1);
-							recheck = true;
-							break;
-						}
-					}
-				}
-				
-				if (recheck)
-				{
-					break;
-				}
+				shape->SetPosition(x + 1, y);
+				recheck = true;
+			}
+			else if (brx > playfieldWidth_ + 1)
+			{
+				shape->SetPosition(x - 1, y);
+				recheck = true;
+			}
+			else if (bry > playfieldHeight_ + 1)
+			{
+				shape->SetPosition(x, y - 1);
+				recheck = true;
 			}
 		} while (recheck);
 	}
@@ -404,12 +456,9 @@ bool GameStateGamePlay::RotateShape(Shape* shape)
 			if (DoesShapeCollide(shape))
 			{
 				shape->SetPosition(x, y - 1);
+				ClampShape(shape);
 				
-				if (DoesShapeCollide(shape))
-				{
-					shape->SetPosition(x, y + 1);
-				}
-				else
+				if (!DoesShapeCollide(shape))
 				{
 					result = true;
 					break;
@@ -568,12 +617,14 @@ void GameStateGamePlay::DrawShape(const Shape* shape)
 	{
 		shape->Draw();
 		
+#if 0
 		int tlx, tly;
 		int brx, bry;
 		
+		SDL_Rect r;
+		/*
 		shape->GetBounds(tlx, tly, brx, bry);
 		
-		SDL_Rect r;
 		r.x = tlx * TILE_SIZE;
 		r.y = tly * TILE_SIZE;
 		r.w = (brx * TILE_SIZE) - r.x;
@@ -581,6 +632,17 @@ void GameStateGamePlay::DrawShape(const Shape* shape)
 		
 		SDL_SetRenderDrawColor(app_->GetRenderer(), 0xFF, 0xFF, 0xFF, 0xFF);
 		SDL_RenderDrawRect(app_->GetRenderer(), &r);
+		*/
+		shape->GetInnerBounds(tlx, tly, brx, bry);
+		
+		r.x = tlx * TILE_SIZE;
+		r.y = tly * TILE_SIZE;
+		r.w = (brx * TILE_SIZE) - r.x;
+		r.h = (bry * TILE_SIZE) - r.y;
+		
+		SDL_SetRenderDrawColor(app_->GetRenderer(), 0xFF, 0xFF, 0xFF, 0xFF);
+		SDL_RenderDrawRect(app_->GetRenderer(), &r);
+#endif
 	}
 }
 
@@ -645,4 +707,76 @@ bool GameStateGamePlay::IsLineComplete(int y) const
 	}
 	
 	return result;
+}
+
+
+bool GameStateGamePlay::CheckForCompleteColumns(void)
+{
+	return false;
+}
+
+bool GameStateGamePlay::IsColumnComplete(int x) const
+{
+	return false;
+}
+
+int GameStateGamePlay::FindNumberOfContiguousLines(int numLines) const
+{
+	int result = 0;
+	int lineCount = 0;
+	
+	for (int y = 0; y <= playfieldHeight_; y++)
+	{
+		if (IsLineComplete(y))
+		{
+			lineCount++;
+		}
+		else
+		{
+			if (numLines == lineCount)
+			{
+				result++;
+			}
+			
+			lineCount = 0;
+		}
+	}
+	
+	return result;
+}
+
+void GameStateGamePlay::UpdateScore(void)
+{
+	int singles = FindNumberOfContiguousLines(1);
+	int dubs = FindNumberOfContiguousLines(2);
+	int trips = FindNumberOfContiguousLines(3);
+	int quads = FindNumberOfContiguousLines(4);
+	
+	if (singles)
+	{
+		score_ += singles * 5;
+	}
+	
+	if (dubs)
+	{
+		score_ += dubs * 15;
+		messages_.push_back("DOUBLE");
+	}
+	
+	if (trips)
+	{
+		score_ += trips * 25;
+		messages_.push_back("TRIPLE");
+	}
+	
+	if (quads)
+	{
+		score_ += quads * 50;
+		messages_.push_back("QUADS!");
+	}
+}
+
+bool GameStateGamePlay::CheckForEndGame(void) const
+{
+	return false;
 }

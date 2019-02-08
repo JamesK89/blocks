@@ -25,8 +25,6 @@ public:
 	virtual void OnInitialize(void);
 	
 protected:
-	Shape* shape_;
-
 	unsigned int menuOption_;
 	
 	void OnMenuOptionSelect(int option);

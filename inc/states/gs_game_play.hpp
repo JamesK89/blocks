@@ -5,15 +5,23 @@
 #include <blocks.hpp>
 #include <gamestate.hpp>
 #include <shapes.hpp>
+#include <vector>
 
-#define GAMEPLAY_STATE_PLAYING	0
-#define GAMEPLAY_STATE_PAUSED	1
+using namespace std;
+
+#define GAMEPLAY_STATE_PLAYING		0
+#define GAMEPLAY_STATE_PAUSED		1
+#define GAMEPLAY_STATE_GAME_OVER	2
+#define GAMEPLAY_STATE_SCORING		3
 
 #define INPUT_ACTION_NONE			0
 #define INPUT_ACTION_ROTATE			(1 << 0)
 #define INPUT_ACTION_SHIFT_LEFT		(1 << 1)
 #define INPUT_ACTION_SHIFT_RIGHT	(1 << 2)
 #define INPUT_ACTION_DROP			(1 << 3)
+
+#define GAMEPLAY_MESSAGE_STACK_SIZE			4
+#define GAMEPLAY_MESSAGE_STRING_LENGTH		16
 
 class GameStateGamePlay : public BaseGameState
 {
@@ -34,6 +42,8 @@ public:
 	virtual void OnInitialize(void);
 	
 protected:
+	vector<const char*> messages_;
+	
 	unsigned short level_;
 	unsigned short score_;
 	
@@ -56,9 +66,9 @@ protected:
 	bool* shapePlayed_;
 	
 	real nextTick_;
+	real messageTick_;
 	
 	int numCompleteLines_;
-	bool scoring_;
 	
 	void ClampShape(Shape* shape);
 	
@@ -71,6 +81,15 @@ protected:
 	bool CheckForCompleteLines(void);
 	void ClearCompleteLines(void);
 	bool IsLineComplete(int y) const;
+	
+	bool CheckForCompleteColumns(void);
+	bool IsColumnComplete(int x) const;
+	
+	int FindNumberOfContiguousLines(int numLines) const;
+	
+	void UpdateScore(void);
+	
+	bool CheckForEndGame(void) const;
 	
 	void OnTick(void);
 	
