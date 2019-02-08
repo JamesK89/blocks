@@ -342,7 +342,7 @@ void GameStateGamePlay::OnTick(void)
 			}
 		
 			if (gamestate_ == GAMEPLAY_STATE_PLAYING)
-				nextTick_ += 1.0;
+				nextTick_ += 1.0f - (level_ * 0.1f);
 		}
 		else
 		{
@@ -773,6 +773,15 @@ void GameStateGamePlay::UpdateScore(void)
 	{
 		score_ += quads * 50;
 		messages_.push_back("QUADS!");
+	}
+	
+	int oldLevel = level_;
+	
+	level_ = (score_ / 100);
+	
+	if (level_ > oldLevel)
+	{
+		messages_.push_back("LEVEL");
 	}
 }
 
