@@ -1,5 +1,6 @@
 #include <blocks.hpp>
 #include <states/gs_main_menu.hpp>
+#include <states/gs_game_play.hpp>
 
 GameStateMainMenu::GameStateMainMenu(Application* app)
 	: BaseGameState(app), menuOption_(0)
@@ -91,7 +92,7 @@ void GameStateMainMenu::OnMenuOptionSelect(int option)
 	switch (option)
 	{
 		case 0:
-			app_->SetGameState("GameState.GamePlay");
+			dynamic_cast<GameStateGamePlay*>(app_->SetGameState("GameState.GamePlay"))->NewGame();
 		break;
 #ifndef __EMSCRIPTEN__
 		case 1:

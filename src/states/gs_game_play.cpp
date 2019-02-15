@@ -3,6 +3,7 @@
 
 GameStateGamePlay::GameStateGamePlay(Application* app)
 	: BaseGameState(app), 
+	initialized_(false),
 	score_(0), 
 	level_(0), 
 	playfield_(nullptr), 
@@ -102,6 +103,10 @@ void GameStateGamePlay::OnInput(SDL_Event& evt, bool down)
 			{
 				inputAction_ = INPUT_ACTION_HOLD;
 			}
+		}
+		else if (gamestate_ == GAMEPLAY_STATE_GAME_OVER)
+		{
+			app_->SetGameState("GameState.MainMenu");
 		}
 	}
 }
@@ -223,7 +228,7 @@ void GameStateGamePlay::OnResume(BaseGameState* oldState)
 
 void GameStateGamePlay::OnInitialize(void)
 {
-	srand(unsigned int(time(NULL)));
+	srand((unsigned int)time(NULL));
 	
 #if !defined(__EMSCRIPTEN__) && !defined(WIN32)
 	FILE* fp = fopen("/dev/urandom", "r");
@@ -242,8 +247,6 @@ void GameStateGamePlay::OnInitialize(void)
 	playfieldHeight_ = (FRAME_HEIGHT / TILE_SIZE) - 2;
 	
 	playfield_ = new unsigned char[playfieldWidth_ * playfieldHeight_];
-	
-	memset(playfield_, ZERO, sizeof(unsigned char) * (playfieldWidth_ * playfieldHeight_));
 
 	numShapes_ = SHAPE_COUNT;
 	shapePlayed_ = new bool[numShapes_];
@@ -251,13 +254,34 @@ void GameStateGamePlay::OnInitialize(void)
 	
 	for (unsigned int i = 0; i < numShapes_; i++)
 	{
-		shapePlayed_[i] = false;
 		shapes_[i] = new Shape(app_, &SHAPES[i]);
 	}
+	
+	NewGame();
+	
+	initialized_ = true;
+}
+
+void GameStateGamePlay::NewGame(void)
+{
+	for (unsigned int i = 0; i < numShapes_; i++)
+	{
+		shapePlayed_[i] = false;
+	}
+	
+	memset(playfield_, ZERO, sizeof(unsigned char) * (playfieldWidth_ * playfieldHeight_));
+	
+	score_ = 0;
+	level_ = 1;
 	
 	gamestate_ = GAMEPLAY_STATE_PLAYING;
 	
 	messages_.clear();
+	
+	if (nextShape_)
+		nextShape_->Set(DraftShape());
+		
+	SpawnShape();
 }
 
 void GameStateGamePlay::DrawLevel(void)

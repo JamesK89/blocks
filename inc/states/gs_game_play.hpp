@@ -42,7 +42,13 @@ public:
 	
 	virtual void OnInitialize(void);
 	
+	virtual void NewGame(void);
+	
+	unsigned short GetScore(void);
+	
 protected:
+	bool initialized_;
+
 	vector<const char*> messages_;
 	
 	unsigned short level_;
