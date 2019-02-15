@@ -100,6 +100,7 @@
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>E:\Source\SDL2\include;$(SolutionDir)\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);WIN32</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalDependencies>SDL2main.lib;SDL2.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -115,6 +116,7 @@
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>E:\Source\SDL2\include;$(SolutionDir)\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);WIN32</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalDependencies>SDL2main.lib;SDL2.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -130,6 +132,7 @@
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>E:\Source\SDL2\include;$(SolutionDir)\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);WIN32</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -147,6 +150,7 @@
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>E:\Source\SDL2\include;$(SolutionDir)\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);WIN32</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -157,9 +161,18 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="inc\blocks.hpp" />
+    <ClInclude Include="inc\gamestate.hpp" />
+    <ClInclude Include="inc\shapes.hpp" />
+    <ClInclude Include="inc\states\gs_game_play.hpp" />
+    <ClInclude Include="inc\states\gs_main_menu.hpp" />
+    <ClInclude Include="inc\vector3.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\blocks.cpp" />
+    <ClCompile Include="src\shapes.cpp" />
+    <ClCompile Include="src\states\gs_game_play.cpp" />
+    <ClCompile Include="src\states\gs_main_menu.cpp" />
+    <ClCompile Include="src\vector3.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

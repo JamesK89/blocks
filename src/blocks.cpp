@@ -566,6 +566,8 @@ BaseGameState* Application::GetGameState(void)
 
 BaseGameState* Application::SetGameState(BaseGameState* state)
 {
+	BaseGameState* result = nullptr;
+
 	if (currentGameState_ != state)
 	{
 		if (currentGameState_)
@@ -575,17 +577,24 @@ BaseGameState* Application::SetGameState(BaseGameState* state)
 		
 		state->OnResume(currentGameState_);
 		currentGameState_ = state;
+
+		result = currentGameState_;
 	}
+
+	return result;
 }
 
 BaseGameState* Application::SetGameState(const char* szStateName)
 {
+	BaseGameState* result = nullptr;
 	BaseGameState* newState = GetGameState(szStateName);
 	
 	if (newState)
 	{
-		SetGameState(newState);
+		result = SetGameState(newState);
 	}
+
+	return result;
 }
 
 int main(int argc, char* argv[])

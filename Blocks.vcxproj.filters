@@ -13,15 +13,48 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Header Files\states">
+      <UniqueIdentifier>{3dcb8300-7835-4583-97cb-753f47920ddb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\states">
+      <UniqueIdentifier>{e7a4fb36-7b42-4e02-a721-50a2feb28f24}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="inc\blocks.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="inc\gamestate.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\shapes.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\vector3.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\states\gs_game_play.hpp">
+      <Filter>Header Files\states</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\states\gs_main_menu.hpp">
+      <Filter>Header Files\states</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\blocks.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\shapes.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vector3.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\states\gs_game_play.cpp">
+      <Filter>Source Files\states</Filter>
+    </ClCompile>
+    <ClCompile Include="src\states\gs_main_menu.cpp">
+      <Filter>Source Files\states</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
