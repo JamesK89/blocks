@@ -24,7 +24,7 @@ using namespace std;
 #define GAMEPLAY_MESSAGE_STACK_SIZE			4
 #define GAMEPLAY_MESSAGE_STRING_LENGTH		16
 
-class GameStateGamePlay : public BaseGameState
+class GameStateGamePlay : public BaseGameState																		   
 {
 public:
 

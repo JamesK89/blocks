@@ -189,8 +189,8 @@ void Application::InitializeResources(void)
 
 					r.w = r.h = TILE_SIZE;
 
-					r.x = (x * TILE_SIZE);
-					r.y = (y * TILE_SIZE);
+					r.x = (int(x) * TILE_SIZE);
+					r.y = (int(y) * TILE_SIZE);
 
 					memcpy(&tileRects_[(numTilesX * y) + x], &r, sizeof(SDL_Rect));
 				}

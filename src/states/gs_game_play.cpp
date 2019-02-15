@@ -223,7 +223,7 @@ void GameStateGamePlay::OnResume(BaseGameState* oldState)
 
 void GameStateGamePlay::OnInitialize(void)
 {
-	srand(time(NULL));
+	srand(unsigned int(time(NULL)));
 	
 #if !defined(__EMSCRIPTEN__) && !defined(WIN32)
 	FILE* fp = fopen("/dev/urandom", "r");
