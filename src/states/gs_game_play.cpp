@@ -279,7 +279,22 @@ void GameStateGamePlay::NewGame(void)
 	messages_.clear();
 	
 	if (nextShape_)
-		nextShape_->Set(DraftShape());
+	{
+		delete nextShape_;
+		nextShape_ = nullptr;
+	}
+	
+	if (currentShape_)
+	{
+		delete currentShape_;
+		currentShape_ = nullptr;
+	}
+	
+	if (holdShape_)
+	{
+		delete holdShape_;
+		holdShape_ = nullptr;
+	}
 		
 	SpawnShape();
 }
