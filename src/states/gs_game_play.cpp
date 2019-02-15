@@ -225,7 +225,7 @@ void GameStateGamePlay::OnInitialize(void)
 {
 	srand(time(NULL));
 	
-#ifndef __EMSCRIPTEN__
+#if !defined(__EMSCRIPTEN__) && !defined(WIN32)
 	FILE* fp = fopen("/dev/urandom", "r");
 	
 	if (fp)
