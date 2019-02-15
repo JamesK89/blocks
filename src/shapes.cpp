@@ -1,11 +1,48 @@
 #include <blocks.hpp>
 #include <shapes.hpp>
 
+Shape::Shape(Application* app) :
+	app_(app), 
+	shapeInfo_(nullptr), 
+	x_(0), 
+	y_(0), 
+	offX_(0), 
+	offY_(0), 
+	ibbOffX_(9999),
+	ibbOffY_(9999),
+	orientation_(0), 
+	tile_(TILE_BLOCK_RED)
+{
+}
+
 Shape::Shape(Application* app, const ShapeInfo* info) :
-	app_(app), shapeInfo_(info), x_(0), y_(0), offX_(0), offY_(0), orientation_(0), tile_(TILE_BLOCK_RED)
+	app_(app), 
+	shapeInfo_(nullptr), 
+	x_(0), 
+	y_(0), 
+	offX_(0), 
+	offY_(0), 
+	ibbOffX_(9999),
+	ibbOffY_(9999),
+	orientation_(0), 
+	tile_(TILE_BLOCK_RED)
 {	
-	CalculateOffset();
-	tile_ = info->tile;
+	Set(info);
+}
+
+Shape::Shape(Application* app, const Shape* shape) :
+	app_(app), 
+	shapeInfo_(nullptr), 
+	x_(0), 
+	y_(0), 
+	offX_(0), 
+	offY_(0), 
+	ibbOffX_(9999),
+	ibbOffY_(9999),
+	orientation_(0), 
+	tile_(TILE_BLOCK_RED)
+{	
+	Set(shape);
 }
 
 Shape::~Shape(void)
@@ -13,7 +50,32 @@ Shape::~Shape(void)
 	shapeInfo_ = nullptr;
 }
 
-void Shape::Draw(void) const
+void Shape::Set(const ShapeInfo* info)
+{
+	if (info)
+	{
+		shapeInfo_ = info;
+		tile_ = info->tile;
+		CalculateOffset();
+	}
+}
+
+void Shape::Set(const Shape* shape)
+{
+	if (shape)
+	{
+		shapeInfo_ = shape->shapeInfo_;
+		tile_ = shape->tile_;
+		x_ = shape->x_;
+		y_ = shape->y_;
+		offX_ = shape->offX_;
+		offY_ = shape->offY_;
+		ibbOffX_ = shape->ibbOffX_;
+		ibbOffY_ = shape->ibbOffY_;
+	}
+}
+
+void Shape::Draw(bool withOffset) const
 {
 	for (int y = 0; y < SHAPE_HEIGHT; y++)
 	{
@@ -23,8 +85,18 @@ void Shape::Draw(void) const
 			
 			if (isTile)
 			{
-				int realX = (offX_ + x_) + x;
-				int realY = (offY_ + y_) + y;
+				int realX, realY;
+			
+				if (withOffset)
+				{
+					realX = (offX_ + x_) + x;
+					realY = (offY_ + y_) + y;
+				}
+				else
+				{
+					realX = (x_ + x) + ibbOffX_;
+					realY = (y_ + y) + ibbOffY_;
+				}
 			
 				app_->DrawTile(realX, realY, tile_);
 			}
@@ -72,21 +144,38 @@ void Shape::SetTile(int tile)
 
 void Shape::CalculateOffset(void)
 {
+	ibbOffX_ = SHAPE_WIDTH + 1;
+	ibbOffY_ = SHAPE_HEIGHT + 1;
+	
 	for (int y = 0; y < SHAPE_HEIGHT; y++)
 	{
 		for (int x = 0; x < SHAPE_WIDTH; x++)
 		{
+			bool isTile = (shapeInfo_->data[orientation_][(y * SHAPE_WIDTH) + x] & 1);
 			bool isPivot = (shapeInfo_->data[orientation_][(y * SHAPE_WIDTH) + x] & 2);
+			
+			if (isTile)
+			{
+				ibbOffX_ = MIN(ibbOffX_, x);
+				ibbOffY_ = MIN(ibbOffY_, y);
+			}
 			
 			if (isPivot)
 			{
 				offX_ = x * -1;
 				offY_ = y * -1;
-				
-				break;
 			}
 		}
 	}
+	
+	ibbOffX_ *= -1;
+	ibbOffY_ *= -1;
+}
+
+void Shape::GetOffset(int& offX, int& offY) const
+{
+	offX = offX_;
+	offY = offY_;
 }
 
 void Shape::GetBounds(int& topLeftX, int& topLeftY, int& botRightX, int& botRightY) const
@@ -141,4 +230,9 @@ void Shape::GetInnerBounds(int& topLeftX, int& topLeftY, int& botRightX, int& bo
 unsigned char Shape::GetShapeTile(int x, int y) const
 {
 	return shapeInfo_ ? shapeInfo_->data[orientation_][(y * SHAPE_WIDTH) + x] : 0;
+}
+
+const ShapeInfo* Shape::GetInfo(void) const
+{
+	return shapeInfo_;
 }

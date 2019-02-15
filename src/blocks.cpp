@@ -5,10 +5,6 @@
 #include <states/gs_main_menu.hpp>
 #include <states/gs_game_play.hpp>
 
-#ifdef __EMSCRIPTEN__
-#	include <emscripten.h>
-#endif
-
 Application* Application::instance_ = nullptr;
 
 typedef struct s_main_loop_context_t
@@ -137,7 +133,7 @@ bool Application::InitializeSDL(bool fullscreen)
 		}
 		else
 		{
-			window_ = SDL_CreateWindow(WINDOW_TITLE, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, fullscreen ? SDL_WINDOW_FULLSCREEN : 0);
+			window_ = SDL_CreateWindow(WINDOW_TITLE, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, fullscreen ? SDL_WINDOW_FULLSCREEN : SDL_WINDOW_RESIZABLE);
 
 			if (!window_)
 			{
@@ -164,7 +160,7 @@ void Application::InitializeResources(void)
 {
 	if (!target_)
 	{
-		target_ = SDL_CreateTexture(renderer_, SDL_PIXELFORMAT_RGB888, SDL_TEXTUREACCESS_TARGET, WINDOW_WIDTH, WINDOW_HEIGHT);
+		target_ = SDL_CreateTexture(renderer_, SDL_PIXELFORMAT_RGB888, SDL_TEXTUREACCESS_TARGET, FRAME_WIDTH, FRAME_HEIGHT);
 	}
 
 	if (!tileSheet_)
@@ -218,7 +214,15 @@ void Application::InitializeStates(void)
 	gameStates_[1] = new GameStateGamePlay(this);
 	gameStates_[2] = nullptr;
 	
-	currentGameState_ = GetGameState("GameState.MainMenu");
+	
+	currentGameState_ = GetGameState
+	(
+#if 1//ndef __EMSCRIPTEN__
+		"GameState.MainMenu"
+#else
+		"GameState.GamePlay"
+#endif
+	);
 	
 	BaseGameState** ptr = gameStates_;
 	
@@ -287,6 +291,8 @@ void Application::MainLoop(void* arg)
 			case SDL_KEYDOWN:
 				HandleInput(event, true);
 				break;
+			case SDL_FINGERMOTION:
+				break;
 			}
 		}
 
@@ -309,7 +315,29 @@ void Application::MainLoop(void* arg)
 	SDL_SetRenderDrawColor(renderer_, 0x00, 0x00, 0x00, 0x00);
 	SDL_RenderClear(renderer_);
 
-	SDL_RenderCopy(renderer_, target_, nullptr, nullptr);
+	SDL_Rect sr, dr;
+	
+	int ww, wh;
+	
+	sr.x = 0;
+	sr.y = 0;
+	sr.w = FRAME_WIDTH;
+	sr.h = FRAME_HEIGHT;
+	
+#ifdef __EMSCRIPTEN__
+	emscripten_get_canvas_size(&ww, &wh, false);
+#else
+	SDL_GetWindowSize(window_, &ww, &wh);
+#endif
+
+	float ratio = FRAME_WIDTH / FRAME_HEIGHT;
+	
+	dr.w = int(ratio * wh);
+	dr.h = wh;
+	dr.y = 0;
+	dr.x = (ww >> 1) - (dr.w >> 1);
+	
+	SDL_RenderCopy(renderer_, target_, &sr, &dr);
 
 	SDL_RenderPresent(renderer_);
 }
@@ -381,6 +409,24 @@ void Application::HandleDraw(real smooth)
 	}
 }
 
+void Application::Alert(const char* str, ...) const
+{  
+	char buffer[1024];
+	
+	va_list args;
+	va_start (args, str);
+	vsnprintf(buffer, sizeof(buffer) / sizeof(char), str, args);
+	va_end (args);
+	
+#ifdef __EMSCRIPTEN__
+	char scriptBuffer[2048];
+	snprintf(scriptBuffer, sizeof(scriptBuffer) / sizeof(char), "alert('%s');", buffer);
+	emscripten_run_script(scriptBuffer);
+#else
+	printf("%s\n", buffer);
+#endif
+}
+
 void Application::DrawTile(int x, int y, int tile)
 {
 	SDL_Rect r;
@@ -416,6 +462,10 @@ void Application::DrawString(int x, int y, const char* str)
 			else if (str[i] >= '0' && str[i] <= '9')
 			{
 				idx = (str[i] - '0') + TILE_NUMBER;
+			}
+			else if (str[i] == '!')
+			{
+				idx = TILE_EXCLAMATION;
 			}
 			else if (str[i] == ' ')
 			{

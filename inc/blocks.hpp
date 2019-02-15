@@ -7,9 +7,14 @@
 #include <Windows.h>
 #endif
 
+#ifdef __EMSCRIPTEN__
+#	include <emscripten.h>
+#endif
+
 #include <stdio.h>
 #include <time.h>
 #include <string.h>
+
 #include <SDL.h>
 
 #define MIN(x,y)	(((x) < (y)) ? (x) : (y))
@@ -25,12 +30,16 @@ using namespace std;
 
 #define TILE_SIZE		8
 
-#define WINDOW_WIDTH	160
-#define WINDOW_HEIGHT	144
+#define	FRAME_WIDTH		160
+#define FRAME_HEIGHT	144
+
+#define WINDOW_WIDTH	640
+#define WINDOW_HEIGHT	480
 #define WINDOW_TITLE	"Blocks"
 
 #define TILE_TEXT			3
 #define TILE_NUMBER			32
+#define TILE_EXCLAMATION	(TILE_NUMBER+10)
 
 #define TILE_BOX_TOP_LEFT	0
 #define TILE_BOX_TOP		1
@@ -84,6 +93,8 @@ public:
 	bool IsRunning(void) const;
 
 	~Application(void);
+	
+	void Alert(const char* str, ...) const;
 
 	void DrawTile(int x, int y, int tile);
 	void DrawString(int x, int y, const char* str);

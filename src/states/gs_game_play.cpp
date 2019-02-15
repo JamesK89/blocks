@@ -8,15 +8,17 @@ GameStateGamePlay::GameStateGamePlay(Application* app)
 	playfield_(nullptr), 
 	gamestate_(0), 
 	pauseMenuOption_(0), 
-	currentShape_(nullptr), 
+	currentShape_(nullptr),
 	nextShape_(nullptr), 
+	holdShape_(nullptr),
 	nextTick_(0), 
 	inputAction_(0),
 	shapes_(nullptr),
 	numShapes_(0),
 	shapePlayed_(nullptr),
 	numCompleteLines_(0),
-	messages_()
+	messages_(),
+	hasSwappedShapeThisDrop_(false)
 {	
 }
 
@@ -28,17 +30,30 @@ GameStateGamePlay::~GameStateGamePlay(void)
 		playfield_ = nullptr;
 	}
 	
+	if (currentShape_)
+	{
+		delete currentShape_;
+		currentShape_ = nullptr;
+	}
+	
+	if (nextShape_)
+	{
+		delete nextShape_;
+		nextShape_ = nullptr;
+	}
+	
+	if (holdShape_)
+	{
+		delete holdShape_;
+		holdShape_ = nullptr;
+	}
+	
 	if (shapes_)
 	{
 		for (unsigned int i = 0; i < numShapes_; i++)
 		{
 			if (shapes_[i])
 			{
-				if (currentShape_ == shapes_[i])
-				{
-					currentShape_ = nullptr;
-				}
-				
 				delete shapes_[i];
 				shapes_[i] = nullptr;
 			}
@@ -52,12 +67,6 @@ GameStateGamePlay::~GameStateGamePlay(void)
 	{
 		delete [] shapePlayed_;
 		shapePlayed_ = nullptr;
-	}
-	
-	if (currentShape_)
-	{
-		delete currentShape_;
-		currentShape_ = nullptr;
 	}
 }
 
@@ -87,6 +96,10 @@ void GameStateGamePlay::OnInput(SDL_Event& evt, bool down)
 			else if (evt.key.keysym.sym == SDLK_DOWN)
 			{
 				inputAction_ = INPUT_ACTION_DROP;
+			}
+			else if (evt.key.keysym.sym == SDLK_LSHIFT)
+			{
+				inputAction_ = INPUT_ACTION_HOLD;
 			}
 		}
 	}
@@ -118,6 +131,32 @@ void GameStateGamePlay::OnUpdate(real delta)
 			else if (inputAction_ == INPUT_ACTION_DROP)
 			{
 				MoveShape(currentShape_, 0, 1);
+			}
+			else if (inputAction_ == INPUT_ACTION_HOLD)
+			{
+				if (!hasSwappedShapeThisDrop_)
+				{
+					if (!holdShape_)
+					{
+						holdShape_ = new Shape(app_);
+					
+						holdShape_->Set(currentShape_);
+						holdShape_->SetOrientation(0);
+						
+						SpawnShape();
+					}
+					else
+					{
+						Shape* shp = holdShape_;
+						
+						holdShape_ = currentShape_;
+						currentShape_ = shp;
+						
+						PositionShapeAtSpawn(currentShape_);
+					}
+					
+					hasSwappedShapeThisDrop_ = true;
+				}
 			}
 			
 			if (incX != 0)
@@ -162,11 +201,14 @@ void GameStateGamePlay::OnDraw(void)
 	
 	DrawScore();
 	DrawLevel();
+	DrawNextAndHold();
 	DrawPlayfield();
 	
 	app_->DrawString(playfieldWidth_ + 3, 7, "Next");
 	
-	if (gamestate_ == GAMEPLAY_STATE_PAUSED)
+	if (gamestate_ == GAMEPLAY_STATE_GAME_OVER)
+		DrawGameOver();
+	else if (gamestate_ == GAMEPLAY_STATE_PAUSED)
 		DrawPause();
 }
 
@@ -182,6 +224,7 @@ void GameStateGamePlay::OnInitialize(void)
 {
 	srand(time(NULL));
 	
+#ifndef __EMSCRIPTEN__
 	FILE* fp = fopen("/dev/urandom", "r");
 	
 	if (fp)
@@ -192,9 +235,10 @@ void GameStateGamePlay::OnInitialize(void)
 		
 		srand(r);
 	}
+#endif
 	
-	playfieldWidth_ = ((WINDOW_WIDTH / TILE_SIZE) >> 1);
-	playfieldHeight_ = (WINDOW_HEIGHT / TILE_SIZE) - 2;
+	playfieldWidth_ = ((FRAME_WIDTH / TILE_SIZE) >> 1);
+	playfieldHeight_ = (FRAME_HEIGHT / TILE_SIZE) - 2;
 	
 	playfield_ = new unsigned char[playfieldWidth_ * playfieldHeight_];
 	
@@ -234,13 +278,13 @@ void GameStateGamePlay::DrawScore(void)
 	app_->DrawString(playfieldWidth_ + 3, 4, "SCORE");
 	app_->DrawString(playfieldWidth_ + 4, 5, scoreStr);
 	
-	int stringsY = ((WINDOW_HEIGHT / TILE_SIZE) - 5);
+	int stringsY = ((FRAME_HEIGHT / TILE_SIZE) - 5);
 	
 	if ((app_->GetTickCount() % 6) < 3)
 	{
 		for (vector<const char*>::iterator i = messages_.begin(); i != messages_.end(); ++i)
 		{
-			if (stringsY >= ((WINDOW_HEIGHT / TILE_SIZE) - 1))
+			if (stringsY >= ((FRAME_HEIGHT / TILE_SIZE) - 1))
 			{
 				break;
 			}
@@ -251,6 +295,31 @@ void GameStateGamePlay::DrawScore(void)
 			
 			stringsY++;
 		}
+	}
+}
+
+void GameStateGamePlay::DrawNextAndHold(void)
+{		
+	app_->DrawString(playfieldWidth_ + 3, 7, "NXT HLD");
+
+	if (nextShape_)
+	{
+		int ox, oy;
+		
+		nextShape_->GetOffset(ox, oy);
+		
+		nextShape_->SetPosition((playfieldWidth_ + 3), 9);
+		nextShape_->Draw(false);
+	}
+	
+	if (holdShape_)
+	{
+		int ox, oy;
+		
+		holdShape_->GetOffset(ox, oy);
+		
+		holdShape_->SetPosition((playfieldWidth_ + 7), 9);
+		holdShape_->Draw(false);
 	}
 }
 
@@ -293,61 +362,91 @@ void GameStateGamePlay::DrawPlayfield()
 
 void GameStateGamePlay::DrawPause()
 {
+	SDL_RenderSetClipRect(app_->GetRenderer(), nullptr);
+	
 	SDL_Rect r;
 	
 	r.x = 0;
 	r.y = 0;
-	r.w = WINDOW_WIDTH;
-	r.h = WINDOW_HEIGHT;
+	r.w = FRAME_WIDTH;
+	r.h = FRAME_HEIGHT;
 	
-	SDL_SetRenderDrawColor(app_->GetRenderer(), 0x00, 0x00, 0x00, 0x80);
+	SDL_SetRenderDrawColor(app_->GetRenderer(), 0x00, 0x00, 0x00, 0xAF);
 	SDL_RenderFillRect(app_->GetRenderer(), &r);
 	
 	if ((app_->GetTickCount() % 100) > 50)
-		app_->DrawString(((WINDOW_WIDTH / TILE_SIZE) >> 1) - 4, ((WINDOW_HEIGHT / TILE_SIZE) >> 1) - 4, "PAUSED");
+		app_->DrawString(((FRAME_WIDTH / TILE_SIZE) >> 1) - 4, ((FRAME_HEIGHT / TILE_SIZE) >> 1) - 4, "PAUSED");
 		
 	
-	app_->DrawString(((WINDOW_WIDTH / TILE_SIZE) >> 1) - 5, ((WINDOW_HEIGHT / TILE_SIZE) >> 1), "CONTINUE");
-	app_->DrawString(((WINDOW_WIDTH / TILE_SIZE) >> 1) - 3, ((WINDOW_HEIGHT / TILE_SIZE) >> 1) + 2, "EXIT");
+	app_->DrawString(((FRAME_WIDTH / TILE_SIZE) >> 1) - 5, ((FRAME_HEIGHT / TILE_SIZE) >> 1), "CONTINUE");
+	app_->DrawString(((FRAME_WIDTH / TILE_SIZE) >> 1) - 3, ((FRAME_HEIGHT / TILE_SIZE) >> 1) + 2, "EXIT");
 	
 	if ((app_->GetTickCount() % 24) > 12)
 	{
-		app_->DrawTile(((WINDOW_WIDTH / TILE_SIZE) >> 1) - 6, ((WINDOW_HEIGHT / TILE_SIZE) >> 1) + pauseMenuOption_, TILE_CURSOR_LEFT);
+		app_->DrawTile(((FRAME_WIDTH / TILE_SIZE) >> 1) - 6, ((FRAME_HEIGHT / TILE_SIZE) >> 1) + pauseMenuOption_, TILE_CURSOR_LEFT);
 	}
+}
+
+void GameStateGamePlay::DrawGameOver(void)
+{
+	SDL_RenderSetClipRect(app_->GetRenderer(), nullptr);
+	
+	SDL_Rect r;
+	
+	r.x = 0;
+	r.y = 0;
+	r.w = FRAME_WIDTH;
+	r.h = FRAME_HEIGHT;
+	
+	SDL_SetRenderDrawColor(app_->GetRenderer(), 0x00, 0x00, 0x00, 0xAF);
+	SDL_RenderFillRect(app_->GetRenderer(), &r);
+	
+	if ((app_->GetTickCount() % 50) > 25)
+		app_->DrawString(((FRAME_WIDTH / TILE_SIZE) >> 1) - 5, ((FRAME_HEIGHT / TILE_SIZE) >> 1) - 4, "GAME OVER");
 }
 
 void GameStateGamePlay::OnTick(void)
 {
 	if (gamestate_ == GAMEPLAY_STATE_PLAYING)
 	{
-		if (!CheckForEndGame())
-		{
-			ClearCompleteLines();
-			
-			if (!currentShape_)
-			{
-				SpawnShape();
-			}
-			else if (!MoveShape(currentShape_, 0, 1))
-			{
-				ImpressShapeOntoPlayfield(currentShape_);
-				currentShape_ = nullptr;
-				
-				if (CheckForCompleteLines())
-				{
-					UpdateScore();
-					nextTick_ += 1.0;
-					gamestate_ = GAMEPLAY_STATE_SCORING;
-				}
-			}
+		ClearCompleteLines();
 		
-			if (gamestate_ == GAMEPLAY_STATE_PLAYING)
-				nextTick_ += 1.0f - (level_ * 0.1f);
-		}
-		else
+		if (!currentShape_)
 		{
-			gamestate_ = GAMEPLAY_STATE_GAME_OVER;
+			SpawnShape();
+			
+			if (DoesShapeCollide(currentShape_))
+			{
+				gamestate_ = GAMEPLAY_STATE_GAME_OVER;
+			}
 		}
+		else if (!MoveShape(currentShape_, 0, 1))
+		{
+			int stlx, stly;
+			int sbrx, sbry;
+			
+			currentShape_->GetInnerBounds(stlx, stly, sbrx, sbry);
+			
+			if (stly <= 0)
+			{
+				gamestate_ = GAMEPLAY_STATE_GAME_OVER;
+			}
+			
+			ImpressShapeOntoPlayfield(currentShape_);
+			
+			currentShape_ = nullptr;
+			hasSwappedShapeThisDrop_ = false;
+			
+			if (CheckForCompleteLines())
+			{
+				UpdateScore();
+				nextTick_ += 0.25;
+				gamestate_ = GAMEPLAY_STATE_SCORING;
+			}
+		}
+
+		if (gamestate_ == GAMEPLAY_STATE_PLAYING)
+			nextTick_ += 0.5 - (level_ * 0.1);
 	}
 	else if (gamestate_ == GAMEPLAY_STATE_SCORING)
 	{
@@ -355,6 +454,23 @@ void GameStateGamePlay::OnTick(void)
 		nextTick_ += 1.0;
 	}
 	
+}
+
+void GameStateGamePlay::PositionShapeAtSpawn(Shape* shape)
+{
+	if (shape)
+	{	
+		int tlx, tly;
+		int brx, bry;
+		
+		int offx, offy;
+	
+		shape->SetOrientation(0);
+		shape->GetInnerBounds(tlx, tly, brx, bry);
+		shape->GetOffset(offx, offy);
+		
+		shape->SetPosition((((playfieldWidth_ >> 1) - (SHAPE_WIDTH >> 1))) - offx, (((bry - tly) + offy) * -1));
+	}
 }
 
 void GameStateGamePlay::ClampShape(Shape* shape)
@@ -424,6 +540,7 @@ bool GameStateGamePlay::MoveShape(Shape* shape, int dx, int dy)
 			{
 				shape->SetPosition(oX, oY);
 			}
+			
 			result = false;
 		}
 	}
@@ -548,7 +665,7 @@ void GameStateGamePlay::ImpressShapeOntoPlayfield(const Shape* shape)
 				int pfX = (tlx + innerX) - 1;
 				int pfY = (tly + innerY) - 1;
 				
-				if (pfX >= 0 && pfY >= 0)
+				if (pfX >= 0 && pfY >= 0 && pfX <= playfieldWidth_ && pfY <= playfieldHeight_)
 				{
 					unsigned char tile = shape->GetShapeTile(innerX, innerY);
 						
@@ -562,8 +679,10 @@ void GameStateGamePlay::ImpressShapeOntoPlayfield(const Shape* shape)
 	}
 }
 
-void GameStateGamePlay::SpawnShape(void)
+Shape* GameStateGamePlay::DraftShape(void)
 {
+	Shape* result = nullptr;
+	
 	unsigned int numAvailableShapes = 0;
 	
 	for (unsigned int i = 0; i < numShapes_; i++)
@@ -581,20 +700,19 @@ void GameStateGamePlay::SpawnShape(void)
 		numAvailableShapes = numShapes_;
 	}
 	
-	currentShape_ = nullptr;
-	
 	do
 	{
 		int idx = rand() % numShapes_;
 		
 		if (!shapePlayed_[idx])
 		{
-			currentShape_ = shapes_[idx];
+			result = shapes_[idx];
 			shapePlayed_[idx] = true;
 			break;
 		}
 	} while (true);
 	
+#if 0
 	int mostBottomY = 0;
 	
 	for (unsigned int y = 0; y < SHAPE_HEIGHT; y++)
@@ -607,8 +725,30 @@ void GameStateGamePlay::SpawnShape(void)
 			}
 		}
 	}
+#endif
 	
-	currentShape_->SetPosition(((playfieldWidth_ >> 1) - (SHAPE_WIDTH >> 1)) + 1, 1);
+	return result;
+}
+
+void GameStateGamePlay::SpawnShape(void)
+{
+	if (!nextShape_)
+	{
+		nextShape_ = new Shape(app_);
+		nextShape_->Set(DraftShape());
+	}
+		
+	if (!currentShape_)
+	{
+		currentShape_ = new Shape(app_);
+		currentShape_->Set(DraftShape());
+	}
+	
+	currentShape_->Set(nextShape_);
+	nextShape_->Set(DraftShape());
+
+	nextShape_->SetOrientation(0);	
+	PositionShapeAtSpawn(currentShape_);
 }
 
 void GameStateGamePlay::DrawShape(const Shape* shape)
@@ -709,15 +849,40 @@ bool GameStateGamePlay::IsLineComplete(int y) const
 	return result;
 }
 
-
 bool GameStateGamePlay::CheckForCompleteColumns(void)
 {
-	return false;
+	bool result = false;
+	
+	for (int x = 0; x < playfieldWidth_; x++)
+	{
+		if (IsColumnComplete(x))
+		{
+			result = true;
+			break;
+		}
+	}
+	
+	return result;
 }
 
 bool GameStateGamePlay::IsColumnComplete(int x) const
 {
-	return false;
+	bool result = true;
+	
+	const unsigned char* tile = &playfield_[x];
+	
+	for (int y = 0; y < playfieldHeight_; y++)
+	{
+		const unsigned char t = *tile;
+		
+		if (!t)
+		{
+			result = false;
+			break;
+		}
+	}
+	
+	return result;
 }
 
 int GameStateGamePlay::FindNumberOfContiguousLines(int numLines) const
@@ -755,24 +920,37 @@ void GameStateGamePlay::UpdateScore(void)
 	if (singles)
 	{
 		score_ += singles * 5;
+		droppedAQuad_ = false;
 	}
 	
 	if (dubs)
 	{
 		score_ += dubs * 15;
 		messages_.push_back("DOUBLE");
+		droppedAQuad_ = false;
 	}
 	
 	if (trips)
 	{
 		score_ += trips * 25;
 		messages_.push_back("TRIPLE");
+		droppedAQuad_ = false;
 	}
 	
 	if (quads)
 	{
-		score_ += quads * 50;
-		messages_.push_back("QUADS!");
+		if (droppedAQuad_)
+		{
+			score_ += quads * 75;
+			messages_.push_back("DUB!");
+		}
+		else
+		{
+			score_ += quads * 50;
+			messages_.push_back("QUADS!");
+		}
+		
+		droppedAQuad_ = true;
 	}
 	
 	int oldLevel = level_;
@@ -783,9 +961,4 @@ void GameStateGamePlay::UpdateScore(void)
 	{
 		messages_.push_back("LEVEL");
 	}
-}
-
-bool GameStateGamePlay::CheckForEndGame(void) const
-{
-	return false;
 }

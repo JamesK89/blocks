@@ -161,17 +161,17 @@ const unsigned int SHAPE_I_SIZE = 2;
 
 const unsigned char SHAPE_I[SHAPE_I_SIZE][SHAPE_SIZE] = {
 	{
-		0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0,
-		1, 1, 3, 1, 0,
-		0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0
-	},
-	{
 		0, 0, 1, 0, 0,
 		0, 0, 1, 0, 0,
 		0, 0, 3, 0, 0,
 		0, 0, 1, 0, 0,
+		0, 0, 0, 0, 0
+	},
+	{
+		0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0,
+		1, 1, 3, 1, 0,
+		0, 0, 0, 0, 0,
 		0, 0, 0, 0, 0
 	}
 };
@@ -197,10 +197,15 @@ const ShapeInfo SHAPES[] = {
 class Shape
 {
 public:
+	Shape(Application* app);
 	Shape(Application* app, const ShapeInfo* info);
+	Shape(Application* app, const Shape* shape);
 	~Shape(void);
 	
-	void Draw(void) const;
+	void Set(const ShapeInfo* info);
+	void Set(const Shape* shape);
+	
+	void Draw(bool withOffset = true) const;
 	
 	unsigned char GetNumOrientations(void) const;
 	
@@ -216,7 +221,11 @@ public:
 	void GetBounds(int& topLeftX, int& topLeftY, int& botRightX, int& botRightY) const;
 	void GetInnerBounds(int& topLeftX, int& topLeftY, int& botRightX, int& botRightY) const;
 	
+	void GetOffset(int& offX, int& offY) const;
+	
 	unsigned char GetShapeTile(int x, int y) const;
+	
+	const ShapeInfo* GetInfo(void) const;
 	
 protected:
 	Application* app_;
@@ -228,6 +237,9 @@ protected:
 	
 	int offX_;
 	int offY_;
+	
+	int ibbOffX_;
+	int ibbOffY_;
 	
 	int tile_;
 	

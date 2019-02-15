@@ -23,13 +23,26 @@ void GameStateMainMenu::OnInput(SDL_Event& evt, bool down)
 		{
 			case SDLK_DOWN:
 				menuOption_++;
-				menuOption_ %= 2;
+				menuOption_ %= 
+#ifdef __EMSCRIPTEN__
+				1
+#else
+				2
+#endif
+				;
 			break;
 			case SDLK_UP:
 				menuOption_--;
-				menuOption_ %= 2;
+				menuOption_ %= 
+#ifdef __EMSCRIPTEN__
+				1
+#else
+				2
+#endif
+				;
 			break;
 			case SDLK_RETURN:
+			case SDLK_RIGHT:
 				OnMenuOptionSelect(menuOption_);
 			break;
 		}
@@ -42,14 +55,18 @@ void GameStateMainMenu::OnUpdate(real delta)
 
 void GameStateMainMenu::OnDraw(void)
 {
+	SDL_RenderSetClipRect(app_->GetRenderer(), nullptr);
 	SDL_SetRenderDrawColor(app_->GetRenderer(), 0x00, 0x00, 0x00, 0x00);
 	SDL_RenderClear(app_->GetRenderer());
 
-	app_->DrawBox(0, 0, (WINDOW_WIDTH / TILE_SIZE), (WINDOW_HEIGHT / TILE_SIZE));
-	app_->DrawString(7, 1, "Blocks");
+	app_->DrawBox(0, 0, (FRAME_WIDTH / TILE_SIZE), (FRAME_HEIGHT / TILE_SIZE));
+	app_->DrawString(7, 1, "Blocks!");
 	
 	app_->DrawString(7, 4, "Start");
+	
+#ifndef __EMSCRIPTEN__
 	app_->DrawString(7, 5, "Exit");
+#endif
 	
 	if ((app_->GetTickCount() % 24) > 12)
 	{
@@ -76,8 +93,10 @@ void GameStateMainMenu::OnMenuOptionSelect(int option)
 		case 0:
 			app_->SetGameState("GameState.GamePlay");
 		break;
+#ifndef __EMSCRIPTEN__
 		case 1:
 			app_->Stop();
 		break;
+#endif
 	}
 }
