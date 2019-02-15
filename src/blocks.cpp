@@ -176,8 +176,8 @@ void Application::InitializeResources(void)
 
 			SDL_QueryTexture(tileSheet_, nullptr, nullptr, &w, &h);
 
-			int numTilesX = w / TILE_SIZE;
-			int numTilesY = h / TILE_SIZE;
+			size_t numTilesX = w / TILE_SIZE;
+			size_t numTilesY = h / TILE_SIZE;
 
 			tileRects_ = new SDL_Rect[numTilesX * numTilesY];
 
@@ -228,7 +228,7 @@ void Application::InitializeStates(void)
 	
 	currentGameState_ = GetGameState
 	(
-#ifndef __EMSCRIPTEN__
+#if 1 //ndef __EMSCRIPTEN__
 		"GameState.MainMenu"
 #else
 		"GameState.GamePlay"
@@ -618,7 +618,7 @@ int main(int argc, char* argv[])
 	{
 		bool fullscreen = false;
 
-		for (size_t i = 0; i < argc; i++)
+		for (int i = 0; i < argc; i++)
 		{
 			if (strnlen(argv[i], 32) > 1)
 			{

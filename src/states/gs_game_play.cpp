@@ -243,7 +243,7 @@ void GameStateGamePlay::OnInitialize(void)
 	
 	playfield_ = new unsigned char[playfieldWidth_ * playfieldHeight_];
 	
-	memset(playfield_, NULL, sizeof(unsigned char) * (playfieldWidth_ * playfieldHeight_));
+	memset(playfield_, ZERO, sizeof(unsigned char) * (playfieldWidth_ * playfieldHeight_));
 
 	numShapes_ = SHAPE_COUNT;
 	shapePlayed_ = new bool[numShapes_];
@@ -263,7 +263,7 @@ void GameStateGamePlay::OnInitialize(void)
 void GameStateGamePlay::DrawLevel(void)
 {
 	char levelStr[64];
-	memset(&levelStr[0], NULL, sizeof(levelStr));
+	memset(&levelStr[0], ZERO, sizeof(levelStr));
 	snprintf(&levelStr[0], sizeof(levelStr) / sizeof(char), "%i", (level_ + 1));
 	
 	app_->DrawString(playfieldWidth_ + 3, 1, "LEVEL");
@@ -273,7 +273,7 @@ void GameStateGamePlay::DrawLevel(void)
 void GameStateGamePlay::DrawScore(void)
 {
 	char scoreStr[64];
-	memset(&scoreStr[0], NULL, sizeof(scoreStr));
+	memset(&scoreStr[0], ZERO, sizeof(scoreStr));
 	snprintf(&scoreStr[0], sizeof(scoreStr) / sizeof(char), "%i", score_);
 	
 	app_->DrawString(playfieldWidth_ + 3, 4, "SCORE");
@@ -326,11 +326,11 @@ void GameStateGamePlay::DrawNextAndHold(void)
 
 void GameStateGamePlay::DrawPlayfield()
 {
-	for (int y = 0; y < playfieldHeight_; y++)
+	for (unsigned int y = 0; y < playfieldHeight_; y++)
 	{
 		bool isACompleteLine = IsLineComplete(y);
 		
-		for(int x = 0; x < playfieldWidth_; x++)
+		for(unsigned int x = 0; x < playfieldWidth_; x++)
 		{
 			unsigned char tile = playfield_[(y * playfieldWidth_) + x];
 			
@@ -497,12 +497,12 @@ void GameStateGamePlay::ClampShape(Shape* shape)
 				shape->SetPosition(x + 1, y);
 				recheck = true;
 			}
-			else if (brx > playfieldWidth_ + 1)
+			else if (brx > int(playfieldWidth_ + 1))
 			{
 				shape->SetPosition(x - 1, y);
 				recheck = true;
 			}
-			else if (bry > playfieldHeight_ + 1)
+			else if (bry > int(playfieldHeight_ + 1))
 			{
 				shape->SetPosition(x, y - 1);
 				recheck = true;
@@ -564,8 +564,6 @@ bool GameStateGamePlay::RotateShape(Shape* shape)
 		
 		shape->GetPosition(x, y);
 		
-		int i = orient + 1;
-		
 		for (int i = orient + 1; i < (orient + shape->GetNumOrientations()); i++)
 		{
 			shape->SetOrientation(i % shape->GetNumOrientations());
@@ -609,8 +607,6 @@ bool GameStateGamePlay::DoesShapeCollide(const Shape* shape) const
 		int brx, bry;
 		
 		int x, y;
-		
-		int tileIdx = shape->GetTile();
 		
 		shape->GetPosition(x, y);
 		shape->GetBounds(tlx, tly, brx, bry);
@@ -666,7 +662,7 @@ void GameStateGamePlay::ImpressShapeOntoPlayfield(const Shape* shape)
 				int pfX = (tlx + innerX) - 1;
 				int pfY = (tly + innerY) - 1;
 				
-				if (pfX >= 0 && pfY >= 0 && pfX <= playfieldWidth_ && pfY <= playfieldHeight_)
+				if (pfX >= 0 && pfY >= 0 && pfX <= int(playfieldWidth_) && pfY <= int(playfieldHeight_))
 				{
 					unsigned char tile = shape->GetShapeTile(innerX, innerY);
 						
@@ -793,7 +789,7 @@ bool GameStateGamePlay::CheckForCompleteLines(void)
 	
 	numCompleteLines_ = 0;
 	
-	for (int y = 0; y < playfieldHeight_; y++)
+	for (unsigned int y = 0; y < playfieldHeight_; y++)
 	{
 		if (IsLineComplete(y))
 		{	
@@ -808,7 +804,7 @@ bool GameStateGamePlay::CheckForCompleteLines(void)
 void GameStateGamePlay::ClearCompleteLines(void)
 {
 	unsigned char* tempPlayfield = new unsigned char[playfieldWidth_ * playfieldHeight_];
-	memset(tempPlayfield, NULL, sizeof(unsigned char) * (playfieldWidth_ * playfieldHeight_));
+	memset(tempPlayfield, ZERO, sizeof(unsigned char) * (playfieldWidth_ * playfieldHeight_));
 	
 	int pfY = playfieldHeight_ - 1;
 	int tmpY = playfieldHeight_ - 1;
@@ -838,7 +834,7 @@ bool GameStateGamePlay::IsLineComplete(int y) const
 {
 	bool result = true;
 	
-	for (int x = 0; x < playfieldWidth_; x++)
+	for (unsigned int x = 0; x < playfieldWidth_; x++)
 	{
 		if (!playfield_[(playfieldWidth_ * y) + x])
 		{
@@ -854,7 +850,7 @@ bool GameStateGamePlay::CheckForCompleteColumns(void)
 {
 	bool result = false;
 	
-	for (int x = 0; x < playfieldWidth_; x++)
+	for (unsigned int x = 0; x < playfieldWidth_; x++)
 	{
 		if (IsColumnComplete(x))
 		{
@@ -872,7 +868,7 @@ bool GameStateGamePlay::IsColumnComplete(int x) const
 	
 	const unsigned char* tile = &playfield_[x];
 	
-	for (int y = 0; y < playfieldHeight_; y++)
+	for (unsigned int y = 0; y < playfieldHeight_; y++)
 	{
 		const unsigned char t = *tile;
 		
@@ -891,7 +887,7 @@ int GameStateGamePlay::FindNumberOfContiguousLines(int numLines) const
 	int result = 0;
 	int lineCount = 0;
 	
-	for (int y = 0; y <= playfieldHeight_; y++)
+	for (unsigned int y = 0; y <= playfieldHeight_; y++)
 	{
 		if (IsLineComplete(y))
 		{

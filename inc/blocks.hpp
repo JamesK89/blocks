@@ -22,6 +22,10 @@
 
 using namespace std;
 
+#ifndef ZERO
+#define ZERO	(0)
+#endif
+
 #define FRAMES_PER_SECOND	(50.0)
 #define FRAMES_ONE_STEP		(1.0 / FRAMES_PER_SECOND)
 
