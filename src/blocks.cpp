@@ -208,29 +208,32 @@ void Application::InitializeResources(void)
 }
 
 void Application::InitializeStates(void)
-{
+{	
 	gameStates_ = new BaseGameState*[3];
 	gameStates_[0] = new GameStateMainMenu(this);
 	gameStates_[1] = new GameStateGamePlay(this);
 	gameStates_[2] = nullptr;
 	
+	BaseGameState** ptr = gameStates_;
+	
+	do
+	{
+		if (ptr && *ptr)
+		{
+			(*ptr)->OnInitialize();
+		}
+		
+		ptr++;
+	} while (ptr && *ptr);
 	
 	currentGameState_ = GetGameState
 	(
-#if 1//ndef __EMSCRIPTEN__
+#ifndef __EMSCRIPTEN__
 		"GameState.MainMenu"
 #else
 		"GameState.GamePlay"
 #endif
 	);
-	
-	BaseGameState** ptr = gameStates_;
-	
-	while (ptr && *ptr)
-	{
-		(*ptr)->OnInitialize();
-		ptr++;
-	}
 }
 
 #ifdef __EMSCRIPTEN__
@@ -545,16 +548,19 @@ BaseGameState* Application::GetGameState(const char* szStateName)
 	BaseGameState** ptr = gameStates_;
 	BaseGameState* result = nullptr;
 	
-	while (ptr && *ptr)
+	do
 	{
-		if (strncmp((*ptr)->GetStateName(), szStateName, 0xFF) == 0)
+		if (ptr && *ptr)
 		{
-			result = *ptr;
-			break;
+			if (strncmp((*ptr)->GetStateName(), szStateName, 0xFF) == 0)
+			{
+				result = *ptr;
+				break;
+			}
 		}
 		
 		ptr++;
-	}
+	} while (ptr && *ptr);
 	
 	return result;
 }

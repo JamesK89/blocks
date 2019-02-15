@@ -18,7 +18,8 @@ GameStateGamePlay::GameStateGamePlay(Application* app)
 	shapePlayed_(nullptr),
 	numCompleteLines_(0),
 	messages_(),
-	hasSwappedShapeThisDrop_(false)
+	hasSwappedShapeThisDrop_(false),
+	droppedAQuad_(false)
 {	
 }
 
