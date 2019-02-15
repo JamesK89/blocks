@@ -272,7 +272,7 @@ void GameStateGamePlay::NewGame(void)
 	memset(playfield_, ZERO, sizeof(unsigned char) * (playfieldWidth_ * playfieldHeight_));
 	
 	score_ = 0;
-	level_ = 1;
+	level_ = 0;
 	
 	gamestate_ = GAMEPLAY_STATE_PLAYING;
 	
