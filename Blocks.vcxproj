@@ -70,28 +70,28 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>$(SolutionDir)\inc;E:\Source\SDL2-2.0.8\include;$(IncludePath)</IncludePath>
-    <LibraryPath>E:\Source\SDL2-2.0.8\lib\x86;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(SolutionDir)..\..\curl-7.64.0\include;$(SolutionDir)..\..\;$(SolutionDir)\inc;$(SolutionDir)..\..\SDL2-2.0.8\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)..\..\curl-7.64.0\build\lib\Debug;$(SolutionDir)..\..\json-c\build\Debug;$(SolutionDir)..\SDL2-2.0.8\lib\x86;$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)\bin\</OutDir>
     <IntDir>$(SolutionDir)\out\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>E:\Source\SDL2-2.0.8\include;$(IncludePath)</IncludePath>
-    <LibraryPath>E:\Source\SDL2-2.0.8\lib\x86;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(SolutionDir)..\..\curl-7.64.0\include;$(SolutionDir)..\..\;$(SolutionDir)\inc;$(SolutionDir)..\..\SDL2-2.0.8\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)..\..\curl-7.64.0\build\lib\Release;$(SolutionDir)..\..\json-c\build\Release;$(SolutionDir)..\..\SDL2-2.0.8\lib\x86;$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)\bin\</OutDir>
     <IntDir>$(SolutionDir)\out\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(SolutionDir)\bin\</OutDir>
     <IntDir>$(SolutionDir)\out\$(Configuration)\</IntDir>
-    <IncludePath>E:\Source\SDL2-2.0.8\include;$(IncludePath)</IncludePath>
-    <LibraryPath>E:\Source\SDL2-2.0.8\lib\x64;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(SolutionDir)..\..\curl-7.64.0\include;$(SolutionDir)..\..\;$(SolutionDir)\inc;$(SolutionDir)..\..\SDL2-2.0.8\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)..\..\curl-7.64.0\build64\lib\Debug;$(SolutionDir)..\..\json-c\build64\Debug;$(SolutionDir)..\..\SDL2-2.0.8\lib\x64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(SolutionDir)\bin\</OutDir>
     <IntDir>$(SolutionDir)\out\$(Configuration)\</IntDir>
-    <IncludePath>E:\Source\SDL2-2.0.8\include;$(IncludePath)</IncludePath>
-    <LibraryPath>E:\Source\SDL2-2.0.8\lib\x64;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(SolutionDir)..\..\curl-7.64.0\include;$(SolutionDir)..\..\;$(SolutionDir)\inc;$(SolutionDir)..\..\SDL2-2.0.8\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)..\..\curl-7.64.0\build64\lib\Release;$(SolutionDir)..\..\json-c\build64\Release;$(SolutionDir)..\..\SDL2-2.0.8\lib\x64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -103,7 +103,7 @@
       <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);WIN32</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>SDL2main.lib;SDL2.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SDL2main.lib;SDL2.lib;json-c.lib;libcurl-d_imp.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <EntryPointSymbol>
       </EntryPointSymbol>
       <SubSystem>Windows</SubSystem>
@@ -119,7 +119,7 @@
       <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);WIN32</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>SDL2main.lib;SDL2.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SDL2main.lib;SDL2.lib;json-c.lib;libcurl-d_imp.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Windows</SubSystem>
     </Link>
   </ItemDefinitionGroup>
@@ -137,7 +137,7 @@
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>SDL2main.lib;SDL2.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SDL2main.lib;SDL2.lib;json-c.lib;libcurl_imp.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Windows</SubSystem>
     </Link>
   </ItemDefinitionGroup>
@@ -155,7 +155,7 @@
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>SDL2main.lib;SDL2.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SDL2main.lib;SDL2.lib;json-c.lib;libcurl_imp.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Windows</SubSystem>
     </Link>
   </ItemDefinitionGroup>
@@ -164,6 +164,7 @@
     <ClInclude Include="inc\gamestate.hpp" />
     <ClInclude Include="inc\shapes.hpp" />
     <ClInclude Include="inc\states\gs_game_play.hpp" />
+    <ClInclude Include="inc\states\gs_high_scores.hpp" />
     <ClInclude Include="inc\states\gs_main_menu.hpp" />
     <ClInclude Include="inc\vector3.hpp" />
   </ItemGroup>
@@ -171,6 +172,7 @@
     <ClCompile Include="src\blocks.cpp" />
     <ClCompile Include="src\shapes.cpp" />
     <ClCompile Include="src\states\gs_game_play.cpp" />
+    <ClCompile Include="src\states\gs_high_scores.cpp" />
     <ClCompile Include="src\states\gs_main_menu.cpp" />
     <ClCompile Include="src\vector3.cpp" />
   </ItemGroup>

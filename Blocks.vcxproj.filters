@@ -39,6 +39,9 @@
     <ClInclude Include="inc\states\gs_main_menu.hpp">
       <Filter>Header Files\states</Filter>
     </ClInclude>
+    <ClInclude Include="inc\states\gs_high_scores.hpp">
+      <Filter>Header Files\states</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\blocks.cpp">
@@ -54,6 +57,9 @@
       <Filter>Source Files\states</Filter>
     </ClCompile>
     <ClCompile Include="src\states\gs_main_menu.cpp">
+      <Filter>Source Files\states</Filter>
+    </ClCompile>
+    <ClCompile Include="src\states\gs_high_scores.cpp">
       <Filter>Source Files\states</Filter>
     </ClCompile>
   </ItemGroup>
