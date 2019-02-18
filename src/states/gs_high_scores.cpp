@@ -33,9 +33,9 @@ void GameStateHighScores::OnInput(SDL_Event& evt, bool down)
 	{
 		OnInputViewing(evt, down);
 	}
-	else if (state_ == HIGHSCORE_STATE_SUBMITTING)
+	else if (state_ == HIGHSCORE_STATE_SUBMIT)
 	{
-		OnInputSubmitting(evt, down);
+		OnInputSubmit(evt, down);
 	}
 }
 
@@ -63,6 +63,10 @@ void GameStateHighScores::OnDraw(void)
 	else if (state_ == HIGHSCORE_STATE_SUBMITTING)
 	{
 		DrawSubmitting();
+	}
+	else if (state_ == HIGHSCORE_STATE_SUBMIT)
+	{
+		DrawSubmit();
 	}
 }
 
@@ -145,7 +149,31 @@ void GameStateHighScores::DrawFetching(void)
 
 void GameStateHighScores::DrawSubmitting(void)
 {
+	if ((app_->GetTickCount() % 50) > 25)
+	{
+		app_->DrawString(((FRAME_WIDTH / TILE_SIZE) >> 1) - 5, 4, "SUBMITTING");
+	}
+}
+
+void GameStateHighScores::DrawSubmit(void)
+{
 	app_->DrawString(((FRAME_WIDTH / TILE_SIZE) >> 1) - 7, 4, "ENTER INITIALS");
+	
+	int startX = ((FRAME_WIDTH / TILE_SIZE) >> 1) - 2;
+	
+	app_->DrawString(startX, 6, submitName_);
+	
+	if ((app_->GetTickCount() % 24) > 12)
+		app_->DrawTile(startX + submitNameCharIdx_, 7, TILE_CURSOR);
+		
+	char buffer[9];
+	memset(buffer, ZERO, sizeof(buffer));
+	snprintf(buffer, sizeof(buffer), "%i", submitScore_);
+	
+	int len = strlen(buffer);
+	
+	app_->DrawString(((FRAME_WIDTH / TILE_SIZE) >> 1) - 7, 9, "FOR FINAL SCORE");
+	app_->DrawString(((FRAME_WIDTH / TILE_SIZE) >> 1) - (len >> 1) - 1, 11, &buffer[0]);
 }
 
 void GameStateHighScores::OnInputViewing(SDL_Event& evt, bool down)
@@ -156,9 +184,39 @@ void GameStateHighScores::OnInputViewing(SDL_Event& evt, bool down)
 	}
 }
 	
-void GameStateHighScores::OnInputSubmitting(SDL_Event& evt, bool down)
+void GameStateHighScores::OnInputSubmit(SDL_Event& evt, bool down)
 {
-	
+	if (down)
+	{
+		switch (evt.key.keysym.sym)
+		{
+			case SDLK_RIGHT:
+				submitNameCharIdx_++;
+			break;
+			case SDLK_LEFT:
+				submitNameCharIdx_--;
+			break;
+			case SDLK_UP:
+				submitName_[submitNameCharIdx_]++;
+			break;
+			case SDLK_DOWN:
+				submitName_[submitNameCharIdx_]--;
+			break;
+			case SDLK_RETURN:
+				SubmitScore(submitName_, submitScore_);
+			break;
+		}
+		
+		if (submitNameCharIdx_ < 0)
+			submitNameCharIdx_ = SCORE_NAME_LENGTH - 1;
+		else if (submitNameCharIdx_ > SCORE_NAME_LENGTH - 1)
+			submitNameCharIdx_ = 0;
+			
+		if (submitName_[submitNameCharIdx_] < 'A')
+			submitName_[submitNameCharIdx_] = 'Z';
+		else if (submitName_[submitNameCharIdx_] > 'Z')
+			submitName_[submitNameCharIdx_] = 'A';
+	}
 }
 
 #ifndef __EMSCRIPTEN__
@@ -189,8 +247,6 @@ bool GameStateHighScores::GetScores(void)
 {
 	bool result = false;
 
-	Clear();
-	
 #ifndef __EMSCRIPTEN__
 	recvBuffer_.clear();
 	
@@ -228,8 +284,42 @@ bool GameStateHighScores::GetScores(void)
 	return result;
 }
 
-void GameStateHighScores::SubmitScore(char name[3], unsigned short score) const
+bool GameStateHighScores::SubmitScore(const char* name, unsigned short score)
 {
+	bool result = false;
+
+	if (name && score)
+	{
+#ifndef __EMSCRIPTEN__
+		CURL* handle = curl_easy_init();
+		
+		if (handle)
+		{
+			char buffer[1024];
+			
+			snprintf(buffer, sizeof(buffer) / sizeof(char), "name=%s&score=%i", name, score);
+			
+			struct curl_slist* headers = nullptr;
+
+			headers = curl_slist_append(headers, "charsets: utf-8");
+			
+			curl_easy_setopt(handle, CURLOPT_URL, SCORES_URL);
+			curl_easy_setopt(handle, CURLOPT_FOLLOWLOCATION, 1L);
+			curl_easy_setopt(handle, CURLOPT_POSTFIELDS, buffer);
+			
+			CURLcode code = curl_easy_perform(handle);
+			curl_easy_cleanup(handle);
+			
+			result = (code == CURLE_OK);
+		}
+		
+		GetScores();
+#else
+		result = true;
+#endif
+	}
+
+	return result;
 }
 
 void GameStateHighScores::ParseScores(void)
@@ -270,7 +360,7 @@ void GameStateHighScores::ParseScores(void)
 	
 	recvBuffer_.clear();
 	
-	if (state_ == HIGHSCORE_STATE_FETCHING_TO_VIEW)
+	if (state_ == HIGHSCORE_STATE_FETCHING_TO_VIEW || state_ == HIGHSCORE_STATE_SUBMIT)
 	{
 		state_ = HIGHSCORE_STATE_VIEWING;
 	}

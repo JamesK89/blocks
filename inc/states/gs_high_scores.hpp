@@ -46,13 +46,14 @@ protected:
 
 	void DrawScores(void);
 	void DrawFetching(void);
+	void DrawSubmit(void);
 	void DrawSubmitting(void);
 	
 	void OnInputViewing(SDL_Event& evt, bool down);
-	void OnInputSubmitting(SDL_Event& evt, bool down);
+	void OnInputSubmit(SDL_Event& evt, bool down);
 
 	char submitName_[SCORE_NAME_LENGTH + 1];
-	unsigned char submitNameCharIdx_;
+	int submitNameCharIdx_;
 	unsigned short submitScore_;
 
 	char names_[NUM_SCORES][SCORE_NAME_LENGTH + 1];
@@ -61,7 +62,7 @@ protected:
 	unsigned char state_;
 	
 	bool GetScores(void);
-	void SubmitScore(char name[3], unsigned short score) const;
+	bool SubmitScore(const char* name, unsigned short score);
 	
 	void ParseScores(void);
 	

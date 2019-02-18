@@ -620,6 +620,10 @@ int main(int argc, char* argv[])
 		
 	try
 	{
+#if !defined(__EMSCRIPTEN__) && defined(WIN32)
+		curl_global_init(CURL_GLOBAL_ALL);
+#endif
+
 		Application* app = Application::GetInstance();
 
 		if (!app)
