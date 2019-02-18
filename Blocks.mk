@@ -13,7 +13,7 @@ CurrentFileName        :=
 CurrentFilePath        :=
 CurrentFileFullPath    :=
 User                   :=James John Kelly Jr.
-Date                   :=15/02/19
+Date                   :=17/02/19
 CodeLitePath           :=/home/james/.codelite
 LinkerName             :=/usr/bin/g++
 SharedObjectLinkerName :=/usr/bin/g++ -shared -fPIC
@@ -39,8 +39,8 @@ LinkOptions            :=
 IncludePath            :=  $(IncludeSwitch). $(IncludeSwitch). $(IncludeSwitch)./inc $(IncludeSwitch)/usr/include $(IncludeSwitch)/usr/include/SDL2 
 IncludePCH             := 
 RcIncludePath          := 
-Libs                   := $(LibrarySwitch)SDL2 $(LibrarySwitch)SDL2main 
-ArLibs                 :=  "SDL2" "SDL2main" 
+Libs                   := $(LibrarySwitch)SDL2 $(LibrarySwitch)SDL2main $(LibrarySwitch)curl $(LibrarySwitch)json-c 
+ArLibs                 :=  "SDL2" "SDL2main" "curl" "json-c" 
 LibPath                := $(LibraryPathSwitch). 
 
 ##
@@ -60,7 +60,7 @@ AS       := /usr/bin/as
 ## User defined environment variables
 ##
 CodeLiteDir:=/usr/share/codelite
-Objects0=$(IntermediateDirectory)/src_states_gs_game_play.cpp$(ObjectSuffix) $(IntermediateDirectory)/src_states_gs_main_menu.cpp$(ObjectSuffix) $(IntermediateDirectory)/src_vector3.cpp$(ObjectSuffix) $(IntermediateDirectory)/src_shapes.cpp$(ObjectSuffix) $(IntermediateDirectory)/src_blocks.cpp$(ObjectSuffix) 
+Objects0=$(IntermediateDirectory)/src_states_gs_high_scores.cpp$(ObjectSuffix) $(IntermediateDirectory)/src_states_gs_game_play.cpp$(ObjectSuffix) $(IntermediateDirectory)/src_states_gs_main_menu.cpp$(ObjectSuffix) $(IntermediateDirectory)/src_vector3.cpp$(ObjectSuffix) $(IntermediateDirectory)/src_shapes.cpp$(ObjectSuffix) $(IntermediateDirectory)/src_blocks.cpp$(ObjectSuffix) 
 
 
 
@@ -91,6 +91,14 @@ PreBuild:
 ##
 ## Objects
 ##
+$(IntermediateDirectory)/src_states_gs_high_scores.cpp$(ObjectSuffix): src/states/gs_high_scores.cpp $(IntermediateDirectory)/src_states_gs_high_scores.cpp$(DependSuffix)
+	$(CXX) $(IncludePCH) $(SourceSwitch) "/home/james/Source/Portfolio/Blocks/src/states/gs_high_scores.cpp" $(CXXFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/src_states_gs_high_scores.cpp$(ObjectSuffix) $(IncludePath)
+$(IntermediateDirectory)/src_states_gs_high_scores.cpp$(DependSuffix): src/states/gs_high_scores.cpp
+	@$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) -MG -MP -MT$(IntermediateDirectory)/src_states_gs_high_scores.cpp$(ObjectSuffix) -MF$(IntermediateDirectory)/src_states_gs_high_scores.cpp$(DependSuffix) -MM src/states/gs_high_scores.cpp
+
+$(IntermediateDirectory)/src_states_gs_high_scores.cpp$(PreprocessSuffix): src/states/gs_high_scores.cpp
+	$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/src_states_gs_high_scores.cpp$(PreprocessSuffix) src/states/gs_high_scores.cpp
+
 $(IntermediateDirectory)/src_states_gs_game_play.cpp$(ObjectSuffix): src/states/gs_game_play.cpp $(IntermediateDirectory)/src_states_gs_game_play.cpp$(DependSuffix)
 	$(CXX) $(IncludePCH) $(SourceSwitch) "/home/james/Source/Portfolio/Blocks/src/states/gs_game_play.cpp" $(CXXFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/src_states_gs_game_play.cpp$(ObjectSuffix) $(IncludePath)
 $(IntermediateDirectory)/src_states_gs_game_play.cpp$(DependSuffix): src/states/gs_game_play.cpp

@@ -10,6 +10,7 @@
   <VirtualDirectory Name="src">
     <File Name="src/shapes.cpp"/>
     <VirtualDirectory Name="states">
+      <File Name="src/states/gs_high_scores.cpp"/>
       <File Name="src/states/gs_game_play.cpp"/>
       <File Name="src/states/gs_main_menu.cpp"/>
     </VirtualDirectory>
@@ -19,6 +20,7 @@
   <VirtualDirectory Name="inc">
     <File Name="inc/shapes.hpp"/>
     <VirtualDirectory Name="states">
+      <File Name="inc/states/gs_high_scores.hpp"/>
       <File Name="inc/states/gs_game_play.hpp"/>
       <File Name="inc/states/gs_main_menu.hpp"/>
     </VirtualDirectory>
@@ -48,6 +50,8 @@
       <Linker Options="" Required="yes">
         <Library Value="SDL2"/>
         <Library Value="SDL2main"/>
+        <Library Value="curl"/>
+        <Library Value="json-c"/>
       </Linker>
       <ResourceCompiler Options="" Required="no"/>
       <General OutputFile="./bin/$(ProjectName)" IntermediateDirectory="./out" Command="./bin/$(ProjectName)" CommandArguments="-w" UseSeparateDebugArgs="no" DebugArguments="" WorkingDirectory="./" PauseExecWhenProcTerminates="yes" IsGUIProgram="no" IsEnabled="yes"/>
@@ -89,7 +93,12 @@
         <Preprocessor Value="NDEBUG"/>
         <Preprocessor Value="RELEASE"/>
       </Compiler>
-      <Linker Options="" Required="yes"/>
+      <Linker Options="" Required="yes">
+        <Library Value="SDL2"/>
+        <Library Value="SDL2main"/>
+        <Library Value="curl"/>
+        <Library Value="json-c"/>
+      </Linker>
       <ResourceCompiler Options="" Required="no"/>
       <General OutputFile="$(IntermediateDirectory)/$(ProjectName)" IntermediateDirectory="./Release" Command="./$(ProjectName)" CommandArguments="" UseSeparateDebugArgs="no" DebugArguments="" WorkingDirectory="$(IntermediateDirectory)" PauseExecWhenProcTerminates="yes" IsGUIProgram="no" IsEnabled="yes"/>
       <BuildSystem Name="Default"/>

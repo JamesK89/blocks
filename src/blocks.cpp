@@ -2,7 +2,12 @@
 #include <shapes.hpp>
 #include <gamestate.hpp>
 
+#include <exception>
+#include <stdexcept>
+#include <string>
+
 #include <states/gs_main_menu.hpp>
+#include <states/gs_high_scores.hpp>
 #include <states/gs_game_play.hpp>
 
 Application* Application::instance_ = nullptr;
@@ -209,10 +214,11 @@ void Application::InitializeResources(void)
 
 void Application::InitializeStates(void)
 {	
-	gameStates_ = new BaseGameState*[3];
+	gameStates_ = new BaseGameState*[4];
 	gameStates_[0] = new GameStateMainMenu(this);
-	gameStates_[1] = new GameStateGamePlay(this);
-	gameStates_[2] = nullptr;
+	gameStates_[1] = new GameStateHighScores(this);
+	gameStates_[2] = new GameStateGamePlay(this);
+	gameStates_[3] = nullptr;
 	
 	BaseGameState** ptr = gameStates_;
 	
@@ -226,14 +232,7 @@ void Application::InitializeStates(void)
 		ptr++;
 	} while (ptr && *ptr);
 	
-	currentGameState_ = GetGameState
-	(
-#if 1 //ndef __EMSCRIPTEN__
-		"GameState.MainMenu"
-#else
-		"GameState.GamePlay"
-#endif
-	);
+	currentGameState_ = GetGameState("GameState.MainMenu");
 }
 
 #ifdef __EMSCRIPTEN__
@@ -426,7 +425,8 @@ void Application::Alert(const char* str, ...) const
 	snprintf(scriptBuffer, sizeof(scriptBuffer) / sizeof(char), "alert('%s');", buffer);
 	emscripten_run_script(scriptBuffer);
 #else
-	printf("%s\n", buffer);
+	fprintf(stdout, "%s\n", buffer);
+	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, "Alert", buffer, window_);
 #endif
 }
 
@@ -574,17 +574,24 @@ BaseGameState* Application::SetGameState(BaseGameState* state)
 {
 	BaseGameState* result = nullptr;
 
-	if (currentGameState_ != state)
+	if (state)
 	{
-		if (currentGameState_)
+		if (currentGameState_ != state)
 		{
-			currentGameState_->OnSuspend(state);
-		}
-		
-		state->OnResume(currentGameState_);
-		currentGameState_ = state;
+			if (currentGameState_)
+			{
+				currentGameState_->OnSuspend(state);
+			}
+			
+			state->OnResume(currentGameState_);
+			currentGameState_ = state;
 
-		result = currentGameState_;
+			result = currentGameState_;
+		}
+	}
+	else
+	{
+		throw "Tried to switch to NULL gamestate.";
 	}
 
 	return result;
@@ -599,47 +606,58 @@ BaseGameState* Application::SetGameState(const char* szStateName)
 	{
 		result = SetGameState(newState);
 	}
+	else
+	{
+		throw (string("Tried to switch to non-existent gamestate: ") + szStateName).c_str();
+	}
 
 	return result;
 }
 
 int main(int argc, char* argv[])
 {
-	Application* app = Application::GetInstance();
-
-	//unsigned char sh = (SHAPES[4].data[1])[12];
 	int ret = 0;
-
-	if (!app)
+		
+	try
 	{
-		ret = 1;
-	}
-	else
-	{
-		bool fullscreen = false;
+		Application* app = Application::GetInstance();
 
-		for (int i = 0; i < argc; i++)
+		if (!app)
 		{
-			if (strnlen(argv[i], 32) > 1)
+			ret = 1;
+		}
+		else
+		{
+			bool fullscreen = false;
+
+			for (int i = 0; i < argc; i++)
 			{
-				if (argv[i][0] == '-' || argv[i][0] == '/')
+				if (strnlen(argv[i], 32) > 1)
 				{
-					if (argv[i][1] == 'f')
+					if (argv[i][0] == '-' || argv[i][0] == '/')
 					{
-						fullscreen = true;
-					}
-					else if (argv[i][1] == 'w')
-					{
-						fullscreen = false;
+						if (argv[i][1] == 'f')
+						{
+							fullscreen = true;
+						}
+						else if (argv[i][1] == 'w')
+						{
+							fullscreen = false;
+						}
 					}
 				}
 			}
+
+			ret = app->Run(fullscreen);
+
+			delete app;
+			app = nullptr;
 		}
-
-		ret = app->Run(fullscreen);
-
-		delete app;
-		app = nullptr;
+	} 
+	catch (const char* msg)
+	{
+		ret = 1;
+		fprintf(stderr, "ERROR: %s\n", msg);
 	}
 
 	return ret;
