@@ -106,6 +106,7 @@ void GameStateHighScores::SubmitScore(unsigned short score)
 	Clear();
 	
 	state_ = HIGHSCORE_STATE_FETCHING_TO_SUBMIT;
+	submitScore_ = score;
 	
 	GetScores();
 }
@@ -146,7 +147,6 @@ void GameStateHighScores::DrawSubmitting(void)
 {
 	app_->DrawString(((FRAME_WIDTH / TILE_SIZE) >> 1) - 7, 4, "ENTER INITIALS");
 }
-
 
 void GameStateHighScores::OnInputViewing(SDL_Event& evt, bool down)
 {

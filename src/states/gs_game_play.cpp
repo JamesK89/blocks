@@ -1,5 +1,6 @@
 #include <blocks.hpp>
 #include <states/gs_game_play.hpp>
+#include <states/gs_high_scores.hpp>
 
 GameStateGamePlay::GameStateGamePlay(Application* app)
 	: BaseGameState(app), 
@@ -106,7 +107,7 @@ void GameStateGamePlay::OnInput(SDL_Event& evt, bool down)
 		}
 		else if (gamestate_ == GAMEPLAY_STATE_GAME_OVER)
 		{
-			app_->SetGameState("GameState.MainMenu");
+			dynamic_cast<GameStateHighScores*>(app_->SetGameState("GameState.HighScores"))->SubmitScore(score_);
 		}
 	}
 }
