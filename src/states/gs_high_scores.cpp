@@ -130,7 +130,7 @@ void GameStateHighScores::DrawScores(void)
 			memset(buffer, ZERO, sizeof(buffer));
 			snprintf(buffer, sizeof(buffer), "%i", scores_[i]);
 			
-			int len = strlen(buffer);
+			int len = int(strlen(buffer));
 			
 			app_->DrawString(((FRAME_WIDTH / TILE_SIZE) - 1) - len, y, &buffer[0]);
 			
@@ -333,7 +333,7 @@ void GameStateHighScores::ParseScores(void)
 	
 	if (json_object_object_get_ex(pJsObj, "scores", &pScoresObj))
 	{
-		int length = MIN(NUM_SCORES, json_object_array_length(pScoresObj));
+		int length = int(MIN(NUM_SCORES, json_object_array_length(pScoresObj)));
 		int scoresIdx = 0;
 		
 		for (int i = 0; i < length; i++)
