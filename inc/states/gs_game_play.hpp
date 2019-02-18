@@ -100,6 +100,7 @@ protected:
 	int FindNumberOfContiguousLines(int numLines) const;
 	
 	void UpdateScore(void);
+	void CalculateLevel(void);
 	
 	void OnTick(void);
 	

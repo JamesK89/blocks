@@ -296,6 +296,8 @@ void GameStateGamePlay::NewGame(void)
 		delete holdShape_;
 		holdShape_ = nullptr;
 	}
+	
+	CalculateLevel();
 		
 	SpawnShape();
 }
@@ -357,6 +359,7 @@ void GameStateGamePlay::DrawNextAndHold(void)
 	{
 		int ox, oy;
 		
+		holdShape_->SetOrientation(0);
 		holdShape_->GetOffset(ox, oy);
 		
 		holdShape_->SetPosition((playfieldWidth_ + 7), 9);
@@ -487,7 +490,7 @@ void GameStateGamePlay::OnTick(void)
 		}
 
 		if (gamestate_ == GAMEPLAY_STATE_PLAYING)
-			nextTick_ += 0.5 - (level_ * 0.1);
+			nextTick_ += 0.5 - (level_ * 0.05);
 	}
 	else if (gamestate_ == GAMEPLAY_STATE_SCORING)
 	{
@@ -992,10 +995,35 @@ void GameStateGamePlay::UpdateScore(void)
 	
 	int oldLevel = level_;
 	
-	level_ = (score_ / 100);
+	CalculateLevel();
 	
 	if (level_ > oldLevel)
 	{
 		messages_.push_back("LEVEL");
 	}
+}
+
+void GameStateGamePlay::CalculateLevel(void)
+{
+	int base = 2;
+	int exp = 5;
+	
+	int newLevel = 0;
+	
+	int product = 0;
+	
+	int score = score_;
+	
+	while (score > 0)
+	{
+		product = int(powf(base, exp++));
+		
+		if (score < product)
+			break;
+
+		score -= product;
+		newLevel++;
+	}
+	
+	level_ = newLevel;
 }
