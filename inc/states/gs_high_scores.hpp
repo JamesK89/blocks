@@ -10,12 +10,14 @@
 
 #define SCORES_URL	"http://jamesjohnkelly.com/blocks/scores/"
 
-#define HIGHSCORE_STATE_FETCHING_TO_VIEW	0
-#define HIGHSCORE_STATE_FETCHING_TO_SUBMIT	1
-#define HIGHSCORE_STATE_VIEWING				2
-#define HIGHSCORE_STATE_SUBMIT				3
-#define HIGHSCORE_STATE_SUBMITTING			4
-#define HIGHSCORE_STATE_INPUT				5
+#define HIGHSCORE_STATE_ERROR_FETCHING		0
+#define HIGHSCORE_STATE_ERROR_SUBMITTING	1
+#define HIGHSCORE_STATE_FETCHING_TO_VIEW	2
+#define HIGHSCORE_STATE_FETCHING_TO_SUBMIT	3
+#define HIGHSCORE_STATE_VIEWING				4
+#define HIGHSCORE_STATE_SUBMIT				5
+#define HIGHSCORE_STATE_SUBMITTING			6
+#define HIGHSCORE_STATE_INPUT				7
 
 #define SCORE_NAME_LENGTH			3
 
@@ -69,11 +71,19 @@ protected:
 	string	recvBuffer_;
 	
 #ifndef __EMSCRIPTEN__
+	CURL*	curlEasyHandle_;
+	CURLM*	curlMultHandle_;
+	
 	static size_t CurlWriteStat(char * data, size_t size, size_t nmemb, void* p);
 	size_t CurlWriteInst(char * data, size_t size, size_t nmemb);
+	
+	void CurlCleanup(void);
 #else
-	static void EmscriptenOnLoadStat(void* arg, void* buffer, int size);
-	void EmscriptenOnLoadInst(void* buffer, int size);
+	static void EmscriptenSuccessStat(emscripten_fetch_t *fetch);
+	void EmscriptenSuccessImpl(emscripten_fetch_t *fetch);
+	
+	static void EmscriptenErrorStat(emscripten_fetch_t *fetch);
+	void EmscriptenErrorImpl(emscripten_fetch_t *fetch);
 #endif
 };
 

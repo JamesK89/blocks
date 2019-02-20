@@ -620,7 +620,7 @@ int main(int argc, char* argv[])
 		
 	try
 	{
-#if !defined(__EMSCRIPTEN__) && defined(WIN32)
+#ifndef __EMSCRIPTEN__
 		curl_global_init(CURL_GLOBAL_ALL);
 #endif
 

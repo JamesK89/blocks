@@ -44,6 +44,7 @@
         <IncludePath Value="./inc"/>
         <IncludePath Value="/usr/include"/>
         <IncludePath Value="/usr/include/SDL2"/>
+        <IncludePath Value="/home/james/Downloads/emsdk-portable/emscripten/1.38.27/system/em_include"/>
         <Preprocessor Value="DEBUG"/>
         <Preprocessor Value="NRELEASE"/>
       </Compiler>
@@ -90,6 +91,10 @@
     <Configuration Name="Release" CompilerType="GCC" DebuggerType="GNU gdb debugger" Type="Executable" BuildCmpWithGlobalSettings="append" BuildLnkWithGlobalSettings="append" BuildResWithGlobalSettings="append">
       <Compiler Options="-O3;-Wall;-Wno-reorder" C_Options="-O3;-Wall;-Wno-reorder" Assembler="" Required="yes" PreCompiledHeader="" PCHInCommandLine="no" PCHFlags="" PCHFlagsPolicy="0">
         <IncludePath Value="."/>
+        <IncludePath Value="./inc"/>
+        <IncludePath Value="/usr/include"/>
+        <IncludePath Value="/usr/include/SDL2"/>
+        <IncludePath Value="/home/james/Downloads/emsdk-portable/emscripten/1.38.27/system/em_include"/>
         <Preprocessor Value="NDEBUG"/>
         <Preprocessor Value="RELEASE"/>
       </Compiler>

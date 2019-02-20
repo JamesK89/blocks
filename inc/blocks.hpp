@@ -3,12 +3,15 @@
 #define _INCLUDE_BLOCKS_H_
 
 #ifdef WIN32
-#define WIN32_LEAN_AND_MEAN
-#include <Windows.h>
+#	define WIN32_LEAN_AND_MEAN
+#	include <Windows.h>
 #endif
 
 #ifdef __EMSCRIPTEN__
 #	include <emscripten.h>
+#	include <emscripten/fetch.h>
+#else
+#	include <curl/curl.h>
 #endif
 
 #include <stdio.h>

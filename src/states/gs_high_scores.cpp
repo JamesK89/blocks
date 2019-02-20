@@ -4,22 +4,26 @@
 
 #include <json-c/json.h>
 
-#ifndef __EMSCRIPTEN__
-#	include <curl/curl.h>
-#endif
-
 GameStateHighScores::GameStateHighScores(Application* app) : 
 	BaseGameState(app),
 	recvBuffer_(),
 	state_(HIGHSCORE_STATE_FETCHING_TO_VIEW),
 	submitScore_(0),
 	submitNameCharIdx_(0)
+#ifndef __EMSCRIPTEN__
+	,	curlMultHandle_(nullptr),
+		curlEasyHandle_(nullptr)
+#endif
+	
 {	
 	Clear();
 }
 
 GameStateHighScores::~GameStateHighScores(void)
 {
+#ifndef __EMSCRIPTEN__
+	CurlCleanup();
+#endif
 }
 
 const char* GameStateHighScores::GetStateName(void) const
@@ -41,6 +45,24 @@ void GameStateHighScores::OnInput(SDL_Event& evt, bool down)
 
 void GameStateHighScores::OnUpdate(real delta)
 {
+#ifndef __EMSCRIPTEN__
+	if (curlMultHandle_)
+	{
+		int runningHandles = 0;
+		if (curl_multi_perform(curlMultHandle_, &runningHandles) == CURLM_OK)
+		{
+			if (runningHandles < 1)
+			{
+				if (state_ == HIGHSCORE_STATE_FETCHING_TO_VIEW || state_ == HIGHSCORE_STATE_FETCHING_TO_SUBMIT)
+				{
+					ParseScores();
+				}
+				
+				CurlCleanup();
+			}
+		}
+	}
+#endif
 }
 
 void GameStateHighScores::OnDraw(void)
@@ -117,7 +139,7 @@ void GameStateHighScores::SubmitScore(unsigned short score)
 
 void GameStateHighScores::DrawScores(void)
 {
-	int y = 3;
+	int y = 5;
 	
 	for (int i = 0; i < NUM_SCORES; i++)
 	{
@@ -230,16 +252,64 @@ size_t GameStateHighScores::CurlWriteInst(char * data, size_t size, size_t nmemb
 	recvBuffer_.append(data, size * nmemb);
 	return size * nmemb;
 }
-#else
-void GameStateHighScores::EmscriptenOnLoadStat(void* arg, void* buffer, int size)
+
+void GameStateHighScores::CurlCleanup(void)
 {
-	return static_cast<GameStateHighScores*>(arg)->EmscriptenOnLoadInst(buffer, size);
+	if (curlEasyHandle_)
+	{
+		if (curlMultHandle_)
+		{
+			curl_multi_remove_handle(curlMultHandle_, curlEasyHandle_);
+		}
+		
+		curl_easy_cleanup(curlEasyHandle_);
+		curlEasyHandle_ = nullptr;
+	}
+	
+	if (curlMultHandle_)
+	{
+		curl_multi_cleanup(curlMultHandle_);
+		curlMultHandle_ = nullptr;
+	}
+}
+#else
+void GameStateHighScores::EmscriptenSuccessStat(emscripten_fetch_t* fetch)
+{
+	if (fetch && fetch->userData)
+	{
+		static_cast<GameStateHighScores*>(fetch->userData)->EmscriptenSuccessImpl(fetch);
+	}
 }
 
-void GameStateHighScores::EmscriptenOnLoadInst(void* buffer, int size)
+void GameStateHighScores::EmscriptenSuccessImpl(emscripten_fetch_t* fetch)
 {
-	recvBuffer_.append(static_cast<char*>(buffer), size * sizeof(char));
+	if (fetch)
+	{
+		if (fetch->data && fetch->numBytes)
+		{
+			recvBuffer_.append(fetch->data, fetch->numBytes / sizeof(char));
+		}
+		
+		emscripten_fetch_close(fetch);
+	}
+	
 	ParseScores();
+}
+
+void GameStateHighScores::EmscriptenErrorStat(emscripten_fetch_t* fetch)
+{
+	if (fetch && fetch->userData)
+	{
+		static_cast<GameStateHighScores*>(fetch->userData)->EmscriptenErrorImpl(fetch);
+	}
+}
+
+void GameStateHighScores::EmscriptenErrorImpl(emscripten_fetch_t* fetch)
+{
+	if (fetch)
+	{
+		emscripten_fetch_close(fetch);
+	}
 }
 #endif
 
@@ -248,36 +318,42 @@ bool GameStateHighScores::GetScores(void)
 	bool result = false;
 
 #ifndef __EMSCRIPTEN__
+	CurlCleanup();
+	
 	recvBuffer_.clear();
+	curlMultHandle_ = curl_multi_init();
 	
-	CURL* handle = curl_easy_init();
-	
-	if (handle)
+	if (curlMultHandle_)
 	{
-		struct curl_slist* headers = nullptr;
-
-		headers = curl_slist_append(headers, "Accept: application/json");
-		headers = curl_slist_append(headers, "Content-Type: application/json");
-		headers = curl_slist_append(headers, "charsets: utf-8");
+		curlEasyHandle_ = curl_easy_init();
 		
-		curl_easy_setopt(handle, CURLOPT_URL, SCORES_URL);
-		curl_easy_setopt(handle, CURLOPT_HTTPGET, 1L);
-		curl_easy_setopt(handle, CURLOPT_FOLLOWLOCATION, 1L);
-		curl_easy_setopt(handle, CURLOPT_WRITEDATA, dynamic_cast<void*>(this));
-		curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, &GameStateHighScores::CurlWriteStat);
-		
-		CURLcode code = curl_easy_perform(handle);
-		curl_easy_cleanup(handle);
-		
-		result = (code == CURLE_OK);
-	}
-	
-	if (result)
-	{
-		ParseScores();
+		if (curlEasyHandle_)
+		{
+			curl_easy_setopt(curlEasyHandle_, CURLOPT_URL, SCORES_URL);
+			curl_easy_setopt(curlEasyHandle_, CURLOPT_HTTPGET, 1L);
+			curl_easy_setopt(curlEasyHandle_, CURLOPT_FOLLOWLOCATION, 1L);
+			curl_easy_setopt(curlEasyHandle_, CURLOPT_WRITEDATA, dynamic_cast<void*>(this));
+			curl_easy_setopt(curlEasyHandle_, CURLOPT_WRITEFUNCTION, &GameStateHighScores::CurlWriteStat);
+			
+			if (curl_multi_add_handle(curlMultHandle_, curlEasyHandle_) == CURLM_OK)
+			{
+				result = true;
+			}
+		}
 	}
 #else
-	emscripten_async_wget_data(SCORES_URL, dynamic_cast<void*>(this), &GameStateHighScores::EmscriptenOnLoadStat, nullptr);
+	emscripten_fetch_attr_t attr;
+	emscripten_fetch_attr_init(&attr);
+	
+	strcpy(attr.requestMethod, "GET");
+	attr.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY;
+	attr.overriddenMimeType = "application/json";
+	attr.userData = dynamic_cast<void*>(this);
+	attr.onsuccess = &GameStateHighScores::EmscriptenSuccessStat;
+	attr.onerror = &GameStateHighScores::EmscriptenErrorStat;
+  
+	emscripten_fetch(&attr, SCORES_URL);
+  
 	result = true;
 #endif
 
@@ -291,29 +367,37 @@ bool GameStateHighScores::SubmitScore(const char* name, unsigned short score)
 	if (name && score)
 	{
 #ifndef __EMSCRIPTEN__
-		CURL* handle = curl_easy_init();
+		CurlCleanup();
 		
-		if (handle)
+		recvBuffer_.clear();
+		curlMultHandle_ = curl_multi_init();
+		
+		if (curlMultHandle_)
 		{
-			char buffer[1024];
+			curlEasyHandle_ = curl_easy_init();
 			
-			snprintf(buffer, sizeof(buffer) / sizeof(char), "name=%s&score=%i", name, score);
-			
-			struct curl_slist* headers = nullptr;
+			if (curlEasyHandle_)
+			{
+				char buffer[1024];
+				
+				snprintf(buffer, sizeof(buffer) / sizeof(char), "name=%s&score=%i", name, score);
+				
+				struct curl_slist* headers = nullptr;
 
-			headers = curl_slist_append(headers, "charsets: utf-8");
+				headers = curl_slist_append(headers, "charsets: utf-8");
+				
+				curl_easy_setopt(curlEasyHandle_, CURLOPT_URL, SCORES_URL);
+				curl_easy_setopt(curlEasyHandle_, CURLOPT_POSTFIELDS, buffer);
+				curl_easy_setopt(curlEasyHandle_, CURLOPT_FOLLOWLOCATION, 1L);
+				curl_easy_setopt(curlEasyHandle_, CURLOPT_WRITEDATA, dynamic_cast<void*>(this));
+				curl_easy_setopt(curlEasyHandle_, CURLOPT_WRITEFUNCTION, &GameStateHighScores::CurlWriteStat);
 			
-			curl_easy_setopt(handle, CURLOPT_URL, SCORES_URL);
-			curl_easy_setopt(handle, CURLOPT_FOLLOWLOCATION, 1L);
-			curl_easy_setopt(handle, CURLOPT_POSTFIELDS, buffer);
-			
-			CURLcode code = curl_easy_perform(handle);
-			curl_easy_cleanup(handle);
-			
-			result = (code == CURLE_OK);
+				if (curl_multi_add_handle(curlMultHandle_, curlEasyHandle_) == CURLM_OK)
+				{
+					result = true;
+				}
+			}
 		}
-		
-		GetScores();
 #else
 		result = true;
 #endif
