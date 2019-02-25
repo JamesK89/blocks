@@ -176,7 +176,7 @@ const unsigned char SHAPE_I[SHAPE_I_SIZE][SHAPE_SIZE] = {
 	}
 };
 
-typedef struct 
+typedef struct s_shape_info_t
 {
 	const char type;
 	const unsigned char num;

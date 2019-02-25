@@ -25,7 +25,7 @@ public:
 	virtual void OnInitialize(void);
 	
 protected:
-	unsigned int menuOption_;
+	int menuOption_;
 	
 	void OnMenuOptionSelect(int option);
 };

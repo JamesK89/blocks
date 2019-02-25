@@ -23,30 +23,37 @@ void GameStateMainMenu::OnInput(SDL_Event& evt, bool down)
 	{
 		switch (evt.key.keysym.sym)
 		{
+			case SDLK_ESCAPE:
+#ifndef __EMSCRIPTEN__
+				app_->Stop();
+#endif
+			break;
 			case SDLK_DOWN:
 				menuOption_++;
-				menuOption_ %= 
-#ifdef __EMSCRIPTEN__
-				2
-#else
-				3
-#endif
-				;
 			break;
 			case SDLK_UP:
 				menuOption_--;
-				menuOption_ %= 
-#ifdef __EMSCRIPTEN__
-				2
-#else
-				3
-#endif
-				;
 			break;
 			case SDLK_RETURN:
 			case SDLK_RIGHT:
 				OnMenuOptionSelect(menuOption_);
 			break;
+		}
+		
+		const int numOptions = 
+#ifndef __EMSCRIPTEN__
+		3;
+#else
+		2;
+#endif
+
+		if (menuOption_ >= numOptions)
+		{
+			menuOption_ = 0;
+		}
+		else if (menuOption_ < 0)
+		{
+			menuOption_ = numOptions - 1;
 		}
 	}
 }
@@ -98,7 +105,7 @@ void GameStateMainMenu::OnMenuOptionSelect(int option)
 			dynamic_cast<GameStateGamePlay*>(app_->SetGameState("GameState.GamePlay"))->NewGame();
 		break;
 		case 1:
-			dynamic_cast<GameStateHighScores*>(app_->SetGameState("GameState.HighScores"))->ViewScores(); //SubmitScore(1024);
+			dynamic_cast<GameStateHighScores*>(app_->SetGameState("GameState.HighScores"))->ViewScores();
 		break;
 #ifndef __EMSCRIPTEN__
 		case 2:

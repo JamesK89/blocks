@@ -11,8 +11,11 @@ GameStateHighScores::GameStateHighScores(Application* app) :
 	submitScore_(0),
 	submitNameCharIdx_(0)
 #ifndef __EMSCRIPTEN__
-	,	curlMultHandle_(nullptr),
-		curlEasyHandle_(nullptr)
+	,	curlMultHandle_(nullptr)
+	,	curlEasyHandle_(nullptr)
+	,	curlMimeData_(nullptr)
+#else
+	,	emFormData_(nullptr)
 #endif
 	
 {	
@@ -23,6 +26,12 @@ GameStateHighScores::~GameStateHighScores(void)
 {
 #ifndef __EMSCRIPTEN__
 	CurlCleanup();
+#else
+	if (emFormData_)
+	{
+		delete [] emFormData_;
+		emFormData_ = nullptr;
+	}
 #endif
 }
 
@@ -45,20 +54,60 @@ void GameStateHighScores::OnInput(SDL_Event& evt, bool down)
 
 void GameStateHighScores::OnUpdate(real delta)
 {
+	if (state_ == HIGHSCORE_STATE_ERROR_SUBMITTING)
+	{
+		state_ = HIGHSCORE_STATE_FETCHING_TO_SUBMIT;
+		GetScores();
+	}
+	else if (state_ == HIGHSCORE_STATE_ERROR_FETCHING)
+	{
+		state_ = HIGHSCORE_STATE_FETCHING_TO_VIEW;
+		GetScores();
+	}
+	
 #ifndef __EMSCRIPTEN__
 	if (curlMultHandle_)
 	{
-		int runningHandles = 0;
-		if (curl_multi_perform(curlMultHandle_, &runningHandles) == CURLM_OK)
+		int numErrors = 0;
+		int numMessages = 0;
+		int numRunningHandles = 0;
+
+		CURLMsg* msg = nullptr;
+		
+		while ((msg = curl_multi_info_read(curlMultHandle_, &numMessages)) || numMessages > 0)
 		{
-			if (runningHandles < 1)
+			if (msg && msg->msg == CURLMSG_DONE && msg->data.result != CURLE_OK)
 			{
-				if (state_ == HIGHSCORE_STATE_FETCHING_TO_VIEW || state_ == HIGHSCORE_STATE_FETCHING_TO_SUBMIT)
+				numErrors++;
+			}
+		}
+		
+		if (numErrors)
+		{
+			CurlCleanup();
+			
+			if (state_ == HIGHSCORE_STATE_SUBMITTING || state_ == HIGHSCORE_STATE_FETCHING_TO_SUBMIT)
+			{
+				state_ = HIGHSCORE_STATE_ERROR_SUBMITTING;
+			}
+			else if (state_ == HIGHSCORE_STATE_ERROR_FETCHING)
+			{
+				state_ = HIGHSCORE_STATE_ERROR_FETCHING;
+			}
+		}
+		else
+		{
+			if (curl_multi_perform(curlMultHandle_, &numRunningHandles) == CURLM_OK)
+			{
+				if (numRunningHandles < 1)
 				{
-					ParseScores();
+					CurlCleanup();
+					
+					if (state_ == HIGHSCORE_STATE_SUBMITTING || state_ == HIGHSCORE_STATE_FETCHING_TO_VIEW || state_ == HIGHSCORE_STATE_FETCHING_TO_SUBMIT)
+					{
+						ParseScores();
+					}
 				}
-				
-				CurlCleanup();
 			}
 		}
 	}
@@ -89,6 +138,14 @@ void GameStateHighScores::OnDraw(void)
 	else if (state_ == HIGHSCORE_STATE_SUBMIT)
 	{
 		DrawSubmit();
+	}
+	else if (state_ == HIGHSCORE_STATE_ERROR_FETCHING)
+	{
+		DrawError();
+	}
+	else if (state_ == HIGHSCORE_STATE_ERROR_SUBMITTING)
+	{
+		DrawError();
 	}
 }
 
@@ -135,6 +192,14 @@ void GameStateHighScores::SubmitScore(unsigned short score)
 	submitScore_ = score;
 	
 	GetScores();
+}
+
+void GameStateHighScores::DrawError(void)
+{
+	if ((app_->GetTickCount() % 50) > 25)
+	{
+		app_->DrawString(((FRAME_WIDTH / TILE_SIZE) >> 1) - 4, 4, "ERROR");
+	}
 }
 
 void GameStateHighScores::DrawScores(void)
@@ -225,19 +290,29 @@ void GameStateHighScores::OnInputSubmit(SDL_Event& evt, bool down)
 				submitName_[submitNameCharIdx_]--;
 			break;
 			case SDLK_RETURN:
-				SubmitScore(submitName_, submitScore_);
+				if (!SubmitScore(submitName_, submitScore_))
+				{
+					state_ = HIGHSCORE_STATE_ERROR_SUBMITTING;
+				}
+				else
+				{
+					state_ = HIGHSCORE_STATE_SUBMITTING;
+				}
 			break;
 		}
 		
-		if (submitNameCharIdx_ < 0)
-			submitNameCharIdx_ = SCORE_NAME_LENGTH - 1;
-		else if (submitNameCharIdx_ > SCORE_NAME_LENGTH - 1)
-			submitNameCharIdx_ = 0;
-			
-		if (submitName_[submitNameCharIdx_] < 'A')
-			submitName_[submitNameCharIdx_] = 'Z';
-		else if (submitName_[submitNameCharIdx_] > 'Z')
-			submitName_[submitNameCharIdx_] = 'A';
+		if (state_ == HIGHSCORE_STATE_SUBMIT)
+		{
+			if (submitNameCharIdx_ < 0)
+				submitNameCharIdx_ = SCORE_NAME_LENGTH - 1;
+			else if (submitNameCharIdx_ > SCORE_NAME_LENGTH - 1)
+				submitNameCharIdx_ = 0;
+				
+			if (submitName_[submitNameCharIdx_] < 'A')
+				submitName_[submitNameCharIdx_] = 'Z';
+			else if (submitName_[submitNameCharIdx_] > 'Z')
+				submitName_[submitNameCharIdx_] = 'A';
+		}
 	}
 }
 
@@ -255,6 +330,12 @@ size_t GameStateHighScores::CurlWriteInst(char * data, size_t size, size_t nmemb
 
 void GameStateHighScores::CurlCleanup(void)
 {
+	if (curlMimeData_)
+	{
+		curl_mime_free(curlMimeData_);
+		curlMimeData_ = nullptr;
+	}
+	
 	if (curlEasyHandle_)
 	{
 		if (curlMultHandle_)
@@ -309,6 +390,21 @@ void GameStateHighScores::EmscriptenErrorImpl(emscripten_fetch_t* fetch)
 	if (fetch)
 	{
 		emscripten_fetch_close(fetch);
+	}
+	
+	if (emFormData_)
+	{
+		delete [] emFormData_;
+		emFormData_ = nullptr;
+	}
+	
+	if (state_ == HIGHSCORE_STATE_SUBMITTING || state_ == HIGHSCORE_STATE_SUBMIT || state_ == HIGHSCORE_STATE_FETCHING_TO_SUBMIT)
+	{
+		state_ = HIGHSCORE_STATE_ERROR_SUBMITTING;
+	}
+	else if (state_ == HIGHSCORE_STATE_FETCHING_TO_VIEW)
+	{
+		state_ = HIGHSCORE_STATE_ERROR_FETCHING;
 	}
 }
 #endif
@@ -378,20 +474,29 @@ bool GameStateHighScores::SubmitScore(const char* name, unsigned short score)
 			
 			if (curlEasyHandle_)
 			{
-				char buffer[1024];
+				curl_mimepart* part = nullptr;
 				
-				snprintf(buffer, sizeof(buffer) / sizeof(char), "name=%s&score=%i", name, score);
+				char buffer[16];
 				
-				struct curl_slist* headers = nullptr;
-
-				headers = curl_slist_append(headers, "charsets: utf-8");
+				snprintf(buffer, sizeof(buffer) / sizeof(char), "%i", score);
+				 
+				curlMimeData_ = curl_mime_init(curlEasyHandle_);
+				
+				part = curl_mime_addpart(curlMimeData_);
+				curl_mime_data(part, name, CURL_ZERO_TERMINATED);
+				curl_mime_name(part, "name");
+				
+				part = curl_mime_addpart(curlMimeData_);
+				curl_mime_data(part, buffer, CURL_ZERO_TERMINATED);
+				curl_mime_name(part, "score");
 				
 				curl_easy_setopt(curlEasyHandle_, CURLOPT_URL, SCORES_URL);
-				curl_easy_setopt(curlEasyHandle_, CURLOPT_POSTFIELDS, buffer);
+				curl_easy_setopt(curlEasyHandle_, CURLOPT_POST, 1L);
+				curl_easy_setopt(curlEasyHandle_, CURLOPT_MIMEPOST, curlMimeData_);
 				curl_easy_setopt(curlEasyHandle_, CURLOPT_FOLLOWLOCATION, 1L);
 				curl_easy_setopt(curlEasyHandle_, CURLOPT_WRITEDATA, dynamic_cast<void*>(this));
 				curl_easy_setopt(curlEasyHandle_, CURLOPT_WRITEFUNCTION, &GameStateHighScores::CurlWriteStat);
-			
+				
 				if (curl_multi_add_handle(curlMultHandle_, curlEasyHandle_) == CURLM_OK)
 				{
 					result = true;
@@ -399,6 +504,33 @@ bool GameStateHighScores::SubmitScore(const char* name, unsigned short score)
 			}
 		}
 #else
+		if (emFormData_)
+		{
+			delete [] emFormData_;
+			emFormData_ = nullptr;
+		}
+	
+		emscripten_fetch_attr_t attr;
+		emscripten_fetch_attr_init(&attr);
+
+		const char* headers[] = {"Content-Type", "application/x-www-form-urlencoded", ZERO};
+		
+		emFormData_ = new char[256];
+		memset(emFormData_, ZERO, sizeof(char) * 256);
+		snprintf(emFormData_, sizeof(char) * 256, "name=%s&score=%i", name, score);
+
+		strcpy(attr.requestMethod, "POST");
+		attr.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY;
+		attr.overriddenMimeType = "application/json";
+		attr.requestHeaders = headers;
+		attr.requestData = const_cast<const char*>(emFormData_);
+		attr.requestDataSize = sizeof(char) * strlen(emFormData_);
+		attr.userData = dynamic_cast<void*>(this);
+		attr.onsuccess = &GameStateHighScores::EmscriptenSuccessStat;
+		attr.onerror = &GameStateHighScores::EmscriptenErrorStat;
+
+		emscripten_fetch(&attr, SCORES_URL);
+
 		result = true;
 #endif
 	}
@@ -409,6 +541,9 @@ bool GameStateHighScores::SubmitScore(const char* name, unsigned short score)
 void GameStateHighScores::ParseScores(void)
 {
 	const char* szJson = recvBuffer_.c_str();
+	
+	int minScore = INT_MAX;
+	int maxScore = INT_MIN;
 	
 	json_tokener_error error;
 	
@@ -436,6 +571,9 @@ void GameStateHighScores::ParseScores(void)
 				
 				snprintf(&names_[scoresIdx][0], SCORE_NAME_LENGTH + 1, "%s", str);
 				scores_[scoresIdx] = json_object_get_int(pScoreValue);
+				
+				minScore = MIN(scores_[scoresIdx], minScore);
+				maxScore = MAX(scores_[scoresIdx], maxScore);
 			}
 				
 			scoresIdx++;
@@ -444,12 +582,19 @@ void GameStateHighScores::ParseScores(void)
 	
 	recvBuffer_.clear();
 	
-	if (state_ == HIGHSCORE_STATE_FETCHING_TO_VIEW || state_ == HIGHSCORE_STATE_SUBMIT)
+	if (state_ == HIGHSCORE_STATE_FETCHING_TO_VIEW || state_ == HIGHSCORE_STATE_SUBMIT || state_ == HIGHSCORE_STATE_SUBMITTING)
 	{
 		state_ = HIGHSCORE_STATE_VIEWING;
 	}
 	else if (state_ == HIGHSCORE_STATE_FETCHING_TO_SUBMIT)
 	{
-		state_ = HIGHSCORE_STATE_SUBMIT;
+		if (submitScore_ > minScore)
+		{
+			state_ = HIGHSCORE_STATE_SUBMIT;
+		}
+		else
+		{
+			state_ = HIGHSCORE_STATE_VIEWING;
+		}
 	}
 }

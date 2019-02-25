@@ -8,7 +8,7 @@
 
 #define NUM_SCORES	10
 
-#define SCORES_URL	"http://jamesjohnkelly.com/blocks/scores/"
+#define SCORES_URL	"http://www.jamesjohnkelly.com/blocks/scores/"
 
 #define HIGHSCORE_STATE_ERROR_FETCHING		0
 #define HIGHSCORE_STATE_ERROR_SUBMITTING	1
@@ -19,7 +19,7 @@
 #define HIGHSCORE_STATE_SUBMITTING			6
 #define HIGHSCORE_STATE_INPUT				7
 
-#define SCORE_NAME_LENGTH			3
+#define SCORE_NAME_LENGTH					3
 
 class GameStateHighScores : public BaseGameState
 {
@@ -46,6 +46,7 @@ protected:
 
 	void Clear(void);
 
+	void DrawError(void);
 	void DrawScores(void);
 	void DrawFetching(void);
 	void DrawSubmit(void);
@@ -71,14 +72,17 @@ protected:
 	string	recvBuffer_;
 	
 #ifndef __EMSCRIPTEN__
-	CURL*	curlEasyHandle_;
-	CURLM*	curlMultHandle_;
+	CURL*		curlEasyHandle_;
+	CURLM*		curlMultHandle_;
+	curl_mime*	curlMimeData_;
 	
 	static size_t CurlWriteStat(char * data, size_t size, size_t nmemb, void* p);
 	size_t CurlWriteInst(char * data, size_t size, size_t nmemb);
 	
 	void CurlCleanup(void);
 #else
+	char* emFormData_;
+	
 	static void EmscriptenSuccessStat(emscripten_fetch_t *fetch);
 	void EmscriptenSuccessImpl(emscripten_fetch_t *fetch);
 	

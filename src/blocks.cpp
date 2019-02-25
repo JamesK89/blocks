@@ -279,16 +279,7 @@ void Application::MainLoop(void* arg)
 				Stop();
 				break;
 			case SDL_KEYUP:
-#ifndef __EMSCRIPTEN__
-				if (event.key.keysym.sym == SDLK_ESCAPE)
-				{
-					Stop();
-				}
-				else
-#endif
-				{
-					HandleInput(event, false);
-				}
+				HandleInput(event, false);
 				break;
 			case SDL_KEYDOWN:
 				HandleInput(event, true);
