@@ -8,7 +8,11 @@
 
 #define NUM_SCORES	10
 
-#define SCORES_URL	"http://www.jamesjohnkelly.com/blocks/scores/"
+#ifndef __EMSCRIPTEN__
+#	define SCORES_URL	"https://www.jamesjohnkelly.com/blocks/scores/"
+#else
+#	define SCORES_URL	"//www.jamesjohnkelly.com/blocks/scores/"
+#endif
 
 #define HIGHSCORE_STATE_ERROR_FETCHING		0
 #define HIGHSCORE_STATE_ERROR_SUBMITTING	1
