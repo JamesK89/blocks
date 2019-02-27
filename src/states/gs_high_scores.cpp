@@ -6,6 +6,7 @@
 
 GameStateHighScores::GameStateHighScores(Application* app) : 
 	BaseGameState(app),
+	inputDelay_(0),
 	recvBuffer_(),
 	state_(HIGHSCORE_STATE_FETCHING_TO_VIEW),
 	submitScore_(0),
@@ -42,18 +43,24 @@ const char* GameStateHighScores::GetStateName(void) const
 
 void GameStateHighScores::OnInput(SDL_Event& evt, bool down)
 {
-	if (state_ == HIGHSCORE_STATE_VIEWING)
+	if (inputDelay_ < real(0.1))
 	{
-		OnInputViewing(evt, down);
-	}
-	else if (state_ == HIGHSCORE_STATE_SUBMIT)
-	{
-		OnInputSubmit(evt, down);
+		if (state_ == HIGHSCORE_STATE_VIEWING)
+		{
+			OnInputViewing(evt, down);
+		}
+		else if (state_ == HIGHSCORE_STATE_SUBMIT)
+		{
+			OnInputSubmit(evt, down);
+		}
 	}
 }
 
 void GameStateHighScores::OnUpdate(real delta)
 {
+	if (inputDelay_ > real(0))
+		inputDelay_ -= delta;
+	
 	if (state_ == HIGHSCORE_STATE_ERROR_SUBMITTING)
 	{
 		state_ = HIGHSCORE_STATE_FETCHING_TO_SUBMIT;

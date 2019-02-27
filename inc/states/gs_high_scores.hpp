@@ -25,6 +25,8 @@
 
 #define SCORE_NAME_LENGTH					3
 
+#define HIGHSCORE_INPUT_DELAY				5
+
 class GameStateHighScores : public BaseGameState
 {
 public:
@@ -72,6 +74,8 @@ protected:
 	bool SubmitScore(const char* name, unsigned short score);
 	
 	void ParseScores(void);
+	
+	real inputDelay_;
 	
 	string	recvBuffer_;
 	
