@@ -114,6 +114,8 @@ void GameStateGamePlay::OnInput(SDL_Event& evt, bool down)
 					inputAction_ = INPUT_ACTION_HOLD;
 				break;
 				case SDLK_ESCAPE:
+				case SDLK_PAUSE:
+				case SDLK_p:
 					pauseMenuOption_ = 0;
 					prePauseGameState_ = gamestate_;
 					gamestate_ = GAMEPLAY_STATE_PAUSED;
@@ -574,7 +576,14 @@ void GameStateGamePlay::OnTick(void)
 		}
 
 		if (gamestate_ == GAMEPLAY_STATE_PLAYING)
-			nextTick_ += real(MAX(0.5 - (level_ * 0.05), 0.1));
+		{
+			real tickInc = real(0.5 - (level_ * 0.05));
+			
+			if (tickInc < real(0.05))
+				tickInc = real(0.05);
+			
+			nextTick_ += tickInc;
+		}
 	}
 	else if (gamestate_ == GAMEPLAY_STATE_SCORING)
 	{
