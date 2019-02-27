@@ -32,6 +32,9 @@ using namespace std;
 #define ZERO	(0)
 #endif
 
+#define VERSION_STRING	"1.0.2"
+#define VERSION_BINARY	((1 << 16) | (0 << 8) | (2 << 0));
+
 #define FRAMES_PER_SECOND	(50.0)
 #define FRAMES_ONE_STEP		(1.0 / FRAMES_PER_SECOND)
 
@@ -107,7 +110,7 @@ public:
 	
 	void Alert(const char* str, ...) const;
 
-	void DrawTile(int x, int y, int tile);
+	void DrawTile(int x, int y, int tile, unsigned char alpha = 0xFF);
 	void DrawString(int x, int y, const char* str);
 	void DrawBox(int x, int y, int w, int h);
 	void DrawShadowBox(int x, int y, int w, int h);

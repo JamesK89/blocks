@@ -75,7 +75,7 @@ void Shape::Set(const Shape* shape)
 	}
 }
 
-void Shape::Draw(bool withOffset) const
+void Shape::Draw(bool withOffset, unsigned char alpha) const
 {
 	for (int y = 0; y < SHAPE_HEIGHT; y++)
 	{
@@ -98,10 +98,25 @@ void Shape::Draw(bool withOffset) const
 					realY = (y_ + y) + ibbOffY_;
 				}
 			
-				app_->DrawTile(realX, realY, tile_);
+				app_->DrawTile(realX, realY, tile_, alpha);
 			}
 		}
 	}
+}
+
+void Shape::Draw(unsigned char alpha) const
+{
+	Draw(true, alpha);
+}
+
+void Shape::Draw(bool withOffset) const
+{
+	Draw(withOffset, 0xFF);
+}
+
+void Shape::Draw(void) const
+{
+	Draw(true, 0xFF);
 }
 
 unsigned char Shape::GetNumOrientations(void) const

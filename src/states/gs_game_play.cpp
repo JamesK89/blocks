@@ -14,6 +14,7 @@ GameStateGamePlay::GameStateGamePlay(Application* app)
 	currentShape_(nullptr),
 	nextShape_(nullptr), 
 	holdShape_(nullptr),
+	ghostShape_(nullptr),
 	nextTick_(0), 
 	lockDelayTicks_(0),
 	inputAction_(0),
@@ -51,6 +52,12 @@ GameStateGamePlay::~GameStateGamePlay(void)
 	{
 		delete holdShape_;
 		holdShape_ = nullptr;
+	}
+	
+	if (ghostShape_)
+	{
+		delete ghostShape_;
+		ghostShape_ = nullptr;
 	}
 	
 	if (shapes_)
@@ -228,6 +235,8 @@ void GameStateGamePlay::OnUpdate(real delta)
 			}
 			
 			inputAction_ = INPUT_ACTION_NONE;
+			
+			UpdateGhostShape();
 		}
 		
 		if (messageTick_ <= 0.0f)
@@ -457,6 +466,11 @@ void GameStateGamePlay::DrawPlayfield()
 	
 	SDL_RenderSetClipRect(app_->GetRenderer(), &pfRect);
 	
+	if (gamestate_ == GAMEPLAY_STATE_PLAYING)
+	{
+		DrawShape(ghostShape_, GAMEPLAY_GHOST_ALPHA);
+	}
+	
 	DrawShape(currentShape_);
 	
 	SDL_RenderSetClipRect(app_->GetRenderer(), &olRect);
@@ -473,7 +487,7 @@ void GameStateGamePlay::DrawPause()
 	r.w = FRAME_WIDTH;
 	r.h = FRAME_HEIGHT;
 	
-	SDL_SetRenderDrawColor(app_->GetRenderer(), 0x00, 0x00, 0x00, 0xAF);
+	SDL_SetRenderDrawColor(app_->GetRenderer(), 0x00, 0x00, 0x00, 0xDD);
 	SDL_RenderFillRect(app_->GetRenderer(), &r);
 	
 	if ((app_->GetTickCount() % 100) > 50)
@@ -519,6 +533,8 @@ void GameStateGamePlay::OnTick(void)
 			
 			lockDelayTicks_ = GAMEPLAY_LOCK_DELAY_TICKS;
 			
+			UpdateGhostShape();
+			
 			if (DoesShapeCollide(currentShape_))
 			{
 				gamestate_ = GAMEPLAY_STATE_GAME_OVER;
@@ -553,6 +569,7 @@ void GameStateGamePlay::OnTick(void)
 		}
 		else
 		{
+			UpdateGhostShape();
 			lockDelayTicks_ = GAMEPLAY_LOCK_DELAY_TICKS;
 		}
 
@@ -857,11 +874,11 @@ void GameStateGamePlay::SpawnShape(void)
 	PositionShapeAtSpawn(currentShape_);
 }
 
-void GameStateGamePlay::DrawShape(const Shape* shape)
+void GameStateGamePlay::DrawShape(const Shape* shape, unsigned char alpha)
 {
 	if (shape)
 	{
-		shape->Draw();
+		shape->Draw(true, alpha);
 		
 #if 0
 		int tlx, tly;
@@ -889,6 +906,26 @@ void GameStateGamePlay::DrawShape(const Shape* shape)
 		SDL_SetRenderDrawColor(app_->GetRenderer(), 0xFF, 0xFF, 0xFF, 0xFF);
 		SDL_RenderDrawRect(app_->GetRenderer(), &r);
 #endif
+	}
+}
+
+void GameStateGamePlay::UpdateGhostShape(void)
+{
+	if (currentShape_)
+	{
+		if (!ghostShape_)
+		{
+			ghostShape_ = new Shape(app_);
+		}
+
+		ghostShape_->Set(currentShape_);
+		ghostShape_->SetTile(TILE_BLOCK_GRY);
+		ghostShape_->SetOrientation(currentShape_->GetOrientation());
+		
+		while (MoveShape(ghostShape_, 0, 1))
+		{
+			/* ... */
+		}
 	}
 }
 

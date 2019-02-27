@@ -205,7 +205,10 @@ public:
 	void Set(const ShapeInfo* info);
 	void Set(const Shape* shape);
 	
-	void Draw(bool withOffset = true) const;
+	void Draw(void) const;
+	void Draw(unsigned char alpha) const;
+	void Draw(bool withOffset) const;
+	void Draw(bool withOffset, unsigned char alpha) const;
 	
 	unsigned char GetNumOrientations(void) const;
 	

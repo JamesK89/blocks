@@ -27,6 +27,8 @@ using namespace std;
 
 #define GAMEPLAY_LOCK_DELAY_TICKS		2
 
+#define GAMEPLAY_GHOST_ALPHA	0x80
+
 class GameStateGamePlay : public BaseGameState																		   
 {
 public:
@@ -69,6 +71,7 @@ protected:
 	
 	unsigned char inputAction_;
 	
+	Shape* ghostShape_;
 	Shape* currentShape_;
 	Shape* holdShape_;
 	Shape* nextShape_;
@@ -113,7 +116,9 @@ protected:
 	Shape* DraftShape(void);
 	
 	void SpawnShape(void);
-	void DrawShape(const Shape* shape);
+	void DrawShape(const Shape* shape, unsigned char alpha = 0xFF);
+	
+	void UpdateGhostShape(void);
 	
 	void DrawLevel(void);
 	void DrawScore(void);

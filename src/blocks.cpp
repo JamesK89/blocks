@@ -166,6 +166,7 @@ void Application::InitializeResources(void)
 	if (!target_)
 	{
 		target_ = SDL_CreateTexture(renderer_, SDL_PIXELFORMAT_RGB888, SDL_TEXTUREACCESS_TARGET, FRAME_WIDTH, FRAME_HEIGHT);
+		SDL_SetTextureBlendMode(target_, SDL_BLENDMODE_BLEND);
 	}
 
 	if (!tileSheet_)
@@ -176,6 +177,9 @@ void Application::InitializeResources(void)
 		{
 			SDL_SetColorKey(surf, SDL_TRUE, SDL_MapRGB(surf->format, 0xFF, 0x00, 0xFF));
 			tileSheet_ = SDL_CreateTextureFromSurface(renderer_, surf);
+			
+			SDL_SetTextureBlendMode(tileSheet_, SDL_BLENDMODE_BLEND);
+			SDL_SetTextureAlphaMod(tileSheet_, 0xFF);
 
 			int w, h;
 
@@ -421,15 +425,17 @@ void Application::Alert(const char* str, ...) const
 #endif
 }
 
-void Application::DrawTile(int x, int y, int tile)
+void Application::DrawTile(int x, int y, int tile, unsigned char alpha)
 {
 	SDL_Rect r;
 	
 	r.x = (x * TILE_SIZE);
 	r.y = (y * TILE_SIZE);
 	r.w = r.h = TILE_SIZE;
-
+	
+	SDL_SetTextureAlphaMod(tileSheet_, alpha);
 	SDL_RenderCopy(renderer_, tileSheet_, &tileRects_[tile], &r);
+	SDL_SetTextureAlphaMod(tileSheet_, 0xFF);
 }
 
 void Application::DrawString(int x, int y, const char* str)
