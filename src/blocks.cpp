@@ -461,6 +461,10 @@ void Application::DrawString(int x, int y, const char* str)
 			{
 				idx = TILE_EXCLAMATION;
 			}
+			else if (str[i] == '.')
+			{
+				idx = TILE_PERIOD;
+			}
 			else if (str[i] == ' ')
 			{
 				strX++;

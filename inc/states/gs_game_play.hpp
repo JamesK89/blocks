@@ -20,9 +20,12 @@ using namespace std;
 #define INPUT_ACTION_SHIFT_RIGHT	(1 << 2)
 #define INPUT_ACTION_DROP			(1 << 3)
 #define INPUT_ACTION_HOLD			(1 << 4)
+#define INPUT_ACTION_QUICK_DROP		(1 << 5)
 
-#define GAMEPLAY_MESSAGE_STACK_SIZE			4
-#define GAMEPLAY_MESSAGE_STRING_LENGTH		16
+#define GAMEPLAY_MESSAGE_STACK_SIZE		4
+#define GAMEPLAY_MESSAGE_STRING_LENGTH	16
+
+#define GAMEPLAY_LOCK_DELAY_TICKS		2
 
 class GameStateGamePlay : public BaseGameState																		   
 {
@@ -55,6 +58,7 @@ protected:
 	unsigned short score_;
 	
 	unsigned char gamestate_;
+	unsigned char prePauseGameState_;
 	
 	unsigned char pauseMenuOption_;
 	
@@ -75,6 +79,8 @@ protected:
 	
 	real nextTick_;
 	real messageTick_;
+	
+	int lockDelayTicks_;
 	
 	bool hasSwappedShapeThisDrop_;
 	bool droppedAQuad_;

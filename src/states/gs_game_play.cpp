@@ -9,11 +9,13 @@ GameStateGamePlay::GameStateGamePlay(Application* app)
 	level_(0), 
 	playfield_(nullptr), 
 	gamestate_(0), 
+	prePauseGameState_(0),
 	pauseMenuOption_(0), 
 	currentShape_(nullptr),
 	nextShape_(nullptr), 
 	holdShape_(nullptr),
 	nextTick_(0), 
+	lockDelayTicks_(0),
 	inputAction_(0),
 	shapes_(nullptr),
 	numShapes_(0),
@@ -84,25 +86,66 @@ void GameStateGamePlay::OnInput(SDL_Event& evt, bool down)
 	{		
 		if (gamestate_ == GAMEPLAY_STATE_PLAYING)
 		{
-			if (evt.key.keysym.sym == SDLK_LEFT)
+			switch (evt.key.keysym.sym)
 			{
-				inputAction_ = INPUT_ACTION_SHIFT_LEFT;
+				case SDLK_LEFT:
+					inputAction_ = INPUT_ACTION_SHIFT_LEFT;
+				break;
+				case SDLK_RIGHT:
+					inputAction_ = INPUT_ACTION_SHIFT_RIGHT;
+				break;
+				case SDLK_UP:
+					inputAction_ = INPUT_ACTION_ROTATE;
+				break;
+				case SDLK_DOWN:
+					inputAction_ = INPUT_ACTION_DROP;
+				break;
+				case SDLK_SPACE:
+					inputAction_ = INPUT_ACTION_QUICK_DROP;
+				break;
+				case SDLK_LSHIFT:
+					inputAction_ = INPUT_ACTION_HOLD;
+				break;
+				case SDLK_ESCAPE:
+					pauseMenuOption_ = 0;
+					prePauseGameState_ = gamestate_;
+					gamestate_ = GAMEPLAY_STATE_PAUSED;
+				break;
 			}
-			else if (evt.key.keysym.sym == SDLK_RIGHT)
+		}
+		else if (gamestate_ == GAMEPLAY_STATE_PAUSED)
+		{
+			switch (evt.key.keysym.sym)
 			{
-				inputAction_ = INPUT_ACTION_SHIFT_RIGHT;
+				case SDLK_UP:
+					pauseMenuOption_--;
+				break;
+				case SDLK_DOWN:
+					pauseMenuOption_++;
+				break;
+				case SDLK_RIGHT:
+				case SDLK_RETURN:
+					if (pauseMenuOption_ == 0)
+					{
+						gamestate_ = prePauseGameState_;
+					}
+					else
+					{
+						app_->SetGameState("GameState.MainMenu");
+					}
+				break;
+				case SDLK_ESCAPE:
+					gamestate_ = prePauseGameState_;
+				break;
 			}
-			else if (evt.key.keysym.sym == SDLK_UP)
+			
+			if (pauseMenuOption_ < 0)
 			{
-				inputAction_ = INPUT_ACTION_ROTATE;
+				pauseMenuOption_ = 1;
 			}
-			else if (evt.key.keysym.sym == SDLK_DOWN)
+			else if (pauseMenuOption_ > 1)
 			{
-				inputAction_ = INPUT_ACTION_DROP;
-			}
-			else if (evt.key.keysym.sym == SDLK_LSHIFT)
-			{
-				inputAction_ = INPUT_ACTION_HOLD;
+				pauseMenuOption_ = 0;
 			}
 		}
 		else if (gamestate_ == GAMEPLAY_STATE_GAME_OVER)
@@ -125,19 +168,32 @@ void GameStateGamePlay::OnUpdate(real delta)
 			
 			if (inputAction_ == INPUT_ACTION_ROTATE)
 			{
-				RotateShape(currentShape_);
+				if (lockDelayTicks_ > 0)
+					RotateShape(currentShape_);
 			}
 			else if (inputAction_ == INPUT_ACTION_SHIFT_LEFT)
 			{
-				incX = -1;
+				if (lockDelayTicks_ > 0)
+					incX = -1;
 			}
 			else if (inputAction_ == INPUT_ACTION_SHIFT_RIGHT)
 			{
-				incX = 1;
+				if (lockDelayTicks_ > 0)
+					incX = 1;
 			}
 			else if (inputAction_ == INPUT_ACTION_DROP)
 			{
 				MoveShape(currentShape_, 0, 1);
+			}
+			else if (inputAction_ == INPUT_ACTION_QUICK_DROP)
+			{
+				if (currentShape_)
+				{
+					while (MoveShape(currentShape_, 0, 1))
+					{
+						lockDelayTicks_ = 0;
+					}
+				}
 			}
 			else if (inputAction_ == INPUT_ACTION_HOLD)
 			{
@@ -274,6 +330,8 @@ void GameStateGamePlay::NewGame(void)
 	
 	score_ = 0;
 	level_ = 0;
+	
+	lockDelayTicks_ = GAMEPLAY_LOCK_DELAY_TICKS;
 	
 	gamestate_ = GAMEPLAY_STATE_PLAYING;
 	
@@ -427,7 +485,7 @@ void GameStateGamePlay::DrawPause()
 	
 	if ((app_->GetTickCount() % 24) > 12)
 	{
-		app_->DrawTile(((FRAME_WIDTH / TILE_SIZE) >> 1) - 6, ((FRAME_HEIGHT / TILE_SIZE) >> 1) + pauseMenuOption_, TILE_CURSOR_LEFT);
+		app_->DrawTile((((FRAME_WIDTH / TILE_SIZE) >> 1) - 6) + (pauseMenuOption_ * 2), ((FRAME_HEIGHT / TILE_SIZE) >> 1) + (pauseMenuOption_ * 2), TILE_CURSOR_LEFT);
 	}
 }
 
@@ -459,6 +517,8 @@ void GameStateGamePlay::OnTick(void)
 		{
 			SpawnShape();
 			
+			lockDelayTicks_ = GAMEPLAY_LOCK_DELAY_TICKS;
+			
 			if (DoesShapeCollide(currentShape_))
 			{
 				gamestate_ = GAMEPLAY_STATE_GAME_OVER;
@@ -466,38 +526,44 @@ void GameStateGamePlay::OnTick(void)
 		}
 		else if (!MoveShape(currentShape_, 0, 1))
 		{
-			int stlx, stly;
-			int sbrx, sbry;
-			
-			currentShape_->GetInnerBounds(stlx, stly, sbrx, sbry);
-			
-			if (stly <= 0)
+			if (--lockDelayTicks_ < 1)
 			{
-				gamestate_ = GAMEPLAY_STATE_GAME_OVER;
+				int stlx, stly;
+				int sbrx, sbry;
+				
+				currentShape_->GetInnerBounds(stlx, stly, sbrx, sbry);
+				
+				if (stly <= 0)
+				{
+					gamestate_ = GAMEPLAY_STATE_GAME_OVER;
+				}
+				
+				ImpressShapeOntoPlayfield(currentShape_);
+				
+				currentShape_ = nullptr;
+				hasSwappedShapeThisDrop_ = false;
+				
+				if (CheckForCompleteLines())
+				{
+					UpdateScore();
+					nextTick_ += real(0.25);
+					gamestate_ = GAMEPLAY_STATE_SCORING;
+				}
 			}
-			
-			ImpressShapeOntoPlayfield(currentShape_);
-			
-			currentShape_ = nullptr;
-			hasSwappedShapeThisDrop_ = false;
-			
-			if (CheckForCompleteLines())
-			{
-				UpdateScore();
-				nextTick_ += 0.25;
-				gamestate_ = GAMEPLAY_STATE_SCORING;
-			}
+		}
+		else
+		{
+			lockDelayTicks_ = GAMEPLAY_LOCK_DELAY_TICKS;
 		}
 
 		if (gamestate_ == GAMEPLAY_STATE_PLAYING)
-			nextTick_ += 0.5 - (level_ * 0.05);
+			nextTick_ += real(MAX(0.5 - (level_ * 0.05), 0.1));
 	}
 	else if (gamestate_ == GAMEPLAY_STATE_SCORING)
 	{
 		gamestate_ = GAMEPLAY_STATE_PLAYING;
 		nextTick_ += 1.0;
 	}
-	
 }
 
 void GameStateGamePlay::PositionShapeAtSpawn(Shape* shape)

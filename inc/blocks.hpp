@@ -50,6 +50,7 @@ using namespace std;
 #define TILE_TEXT			3
 #define TILE_NUMBER			32
 #define TILE_EXCLAMATION	(TILE_NUMBER+10)
+#define TILE_PERIOD			(TILE_NUMBER+11)
 
 #define TILE_BOX_TOP_LEFT	0
 #define TILE_BOX_TOP		1

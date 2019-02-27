@@ -77,6 +77,8 @@ void GameStateMainMenu::OnDraw(void)
 #ifndef __EMSCRIPTEN__
 	app_->DrawString(4, 6, "Exit");
 #endif
+
+	app_->DrawString(1, (FRAME_HEIGHT / TILE_SIZE) - 2, "VER 1.0");
 	
 	if ((app_->GetTickCount() % 24) > 12)
 	{
