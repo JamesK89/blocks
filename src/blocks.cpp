@@ -34,10 +34,19 @@ Application* Application::GetInstance(void)
 }
 
 Application::Application(void) :
-	window_(nullptr), renderer_(nullptr), tileSheet_(nullptr), 
-	tileRects_(nullptr), target_(nullptr), isRunning_(false), 
-	smooth_(0), ticks_(0), time_(0),
-	gameStates_(nullptr), currentGameState_(nullptr)
+	window_(nullptr), 
+	renderer_(nullptr), 
+	tileSheet_(nullptr), 
+	tileRects_(nullptr), 
+	target_(nullptr), 
+	isRunning_(false), 
+	smooth_(0), 
+	ticks_(0), 
+	time_(0),
+	gameStates_(nullptr), 
+	currentGameState_(nullptr),
+	drawOffsX_(0),
+	drawOffsY_(0)
 {
 }
 
@@ -425,12 +434,31 @@ void Application::Alert(const char* str, ...) const
 #endif
 }
 
+void Application::GetDrawOffset(int* x, int* y) const
+{
+	if (x)
+	{
+		*x = drawOffsX_;
+	}
+	
+	if (y)
+	{
+		*y = drawOffsY_;
+	}
+}
+
+void Application::SetDrawOffset(int x, int y)
+{
+	drawOffsX_ = x;
+	drawOffsY_ = y;
+}
+
 void Application::DrawTile(int x, int y, int tile, unsigned char alpha)
 {
 	SDL_Rect r;
 	
-	r.x = (x * TILE_SIZE);
-	r.y = (y * TILE_SIZE);
+	r.x = (x * TILE_SIZE) + drawOffsX_;
+	r.y = (y * TILE_SIZE) + drawOffsY_;
 	r.w = r.h = TILE_SIZE;
 	
 	SDL_SetTextureAlphaMod(tileSheet_, alpha);

@@ -24,7 +24,8 @@ GameStateGamePlay::GameStateGamePlay(Application* app)
 	numCompleteLines_(0),
 	messages_(),
 	hasSwappedShapeThisDrop_(false),
-	droppedAQuad_(false)
+	droppedAQuad_(false),
+	shapeOffsetY_(0)
 {	
 }
 
@@ -255,6 +256,25 @@ void GameStateGamePlay::OnUpdate(real delta)
 		{
 			OnTick();
 		}
+		
+#if 0
+		if (currentShape_)
+		{
+			Shape predictShape(app_);
+			
+			predictShape.Set(currentShape_);
+			predictShape.SetOrientation(currentShape_->GetOrientation());
+			
+			MoveShape(&predictShape, 0, 1);
+			
+			int px, py;
+			int sx, sy;
+			predictShape.GetPosition(px, py);
+			currentShape_->GetPosition(sx, sy);
+			
+			shapeOffsetY_ = int((((py - sy) * TILE_SIZE) * nextTick_) * -1);
+		}
+#endif
 	}
 	else if (gamestate_ == GAMEPLAY_STATE_SCORING)
 	{
@@ -473,7 +493,14 @@ void GameStateGamePlay::DrawPlayfield()
 		DrawShape(ghostShape_, GAMEPLAY_GHOST_ALPHA);
 	}
 	
+	int offsX, offsY;
+	
+	app_->GetDrawOffset(&offsX, &offsY);
+	app_->SetDrawOffset(offsX, offsY + shapeOffsetY_);
+	
 	DrawShape(currentShape_);
+	
+	app_->SetDrawOffset(offsX, offsY);
 	
 	SDL_RenderSetClipRect(app_->GetRenderer(), &olRect);
 }
@@ -579,8 +606,8 @@ void GameStateGamePlay::OnTick(void)
 		{
 			real tickInc = real(0.5 - (level_ * 0.05));
 			
-			if (tickInc < real(0.05))
-				tickInc = real(0.05);
+			if (tickInc < real(0.1))
+				tickInc = real(0.1);
 			
 			nextTick_ += tickInc;
 		}

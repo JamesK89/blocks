@@ -217,16 +217,31 @@ void GameStateHighScores::DrawScores(void)
 	{
 		if (names_[i][0])
 		{
-			app_->DrawString(1, y, &names_[i][0]);
 			
 			char buffer[9];
 			
 			memset(buffer, ZERO, sizeof(buffer));
+			snprintf(buffer, sizeof(buffer), "%2i.", (i + 1));
+			
+			app_->DrawString(1, y, &buffer[0]);
+			app_->DrawString(5, y, &names_[i][0]);
+			
 			snprintf(buffer, sizeof(buffer), "%i", scores_[i]);
 			
 			int len = int(strlen(buffer));
 			
 			app_->DrawString(((FRAME_WIDTH / TILE_SIZE) - 1) - len, y, &buffer[0]);
+			
+			len = 9 - int(MIN(size_t(len), sizeof(buffer)/sizeof(char)));
+			
+			for (int j = 0; j < len; j++)
+			{
+				buffer[j] = '.';
+			}
+			
+			buffer[8] = '\0';
+			
+			app_->DrawString(9, y, &buffer[0]);
 			
 			y++;
 		}

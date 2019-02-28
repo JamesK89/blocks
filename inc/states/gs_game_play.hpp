@@ -83,6 +83,8 @@ protected:
 	real nextTick_;
 	real messageTick_;
 	
+	int shapeOffsetY_;
+	
 	int lockDelayTicks_;
 	
 	bool hasSwappedShapeThisDrop_;
