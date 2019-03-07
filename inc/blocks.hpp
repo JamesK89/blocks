@@ -20,6 +20,8 @@
 #include <string.h>
 #include <string>
 #include <math.h>
+#include <random>
+#include <functional>
 
 #include <SDL.h>
 
@@ -32,8 +34,8 @@ using namespace std;
 #define ZERO	(0)
 #endif
 
-#define VERSION_STRING	"1.0.3"
-#define VERSION_BINARY	((1 << 16) | (0 << 8) | (3 << 0));
+#define VERSION_STRING	"1.0.4"
+#define VERSION_BINARY	((1 << 16) | (0 << 8) | (4 << 0));
 
 #define FRAMES_PER_SECOND	(50.0)
 #define FRAMES_ONE_STEP		(1.0 / FRAMES_PER_SECOND)
@@ -115,6 +117,7 @@ public:
 
 	void DrawTile(int x, int y, int tile, unsigned char alpha = 0xFF);
 	void DrawString(int x, int y, const char* str);
+	void DrawInt(int x, int y, int num);
 	void DrawBox(int x, int y, int w, int h);
 	void DrawShadowBox(int x, int y, int w, int h);
 

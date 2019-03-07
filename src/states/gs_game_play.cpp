@@ -25,7 +25,14 @@ GameStateGamePlay::GameStateGamePlay(Application* app)
 	messages_(),
 	hasSwappedShapeThisDrop_(false),
 	droppedAQuad_(false),
-	shapeOffsetY_(0)
+	shapeOffsetY_(0),
+	numSingles_(0),
+	numDoubles_(0),
+	numTriples_(0),
+	numQuadruples_(0),
+	numLines_(0),
+	seed_(time(0)),
+	rand_(seed_)
 {	
 }
 
@@ -293,13 +300,17 @@ void GameStateGamePlay::OnDraw(void)
 	SDL_SetRenderDrawColor(app_->GetRenderer(), 0x00, 0x00, 0x00, 0x00);
 	SDL_RenderClear(app_->GetRenderer());
 	
+#ifdef DEBUG
+	DrawDebugInfo();
+#endif
+	
 	DrawScore();
 	DrawLevel();
 	DrawNextAndHold();
 	DrawPlayfield();
 	
 	app_->DrawString(playfieldWidth_ + 3, 7, "Next");
-	
+
 	if (gamestate_ == GAMEPLAY_STATE_GAME_OVER)
 		DrawGameOver();
 	else if (gamestate_ == GAMEPLAY_STATE_PAUSED)
@@ -315,22 +326,7 @@ void GameStateGamePlay::OnResume(BaseGameState* oldState)
 }
 
 void GameStateGamePlay::OnInitialize(void)
-{
-	srand((unsigned int)time(NULL));
-	
-#if !defined(__EMSCRIPTEN__) && !defined(WIN32)
-	FILE* fp = fopen("/dev/urandom", "r");
-	
-	if (fp)
-	{
-		unsigned int r;
-		fread(&r, sizeof(r), 1, fp);
-		fclose(fp);
-		
-		srand(r);
-	}
-#endif
-	
+{	
 	playfieldWidth_ = ((FRAME_WIDTH / TILE_SIZE) >> 1);
 	playfieldHeight_ = (FRAME_HEIGHT / TILE_SIZE) - 2;
 	
@@ -344,6 +340,9 @@ void GameStateGamePlay::OnInitialize(void)
 	{
 		shapes_[i] = new Shape(app_, &SHAPES[i]);
 	}
+	
+	seed_ = time(0);
+	rand_ = mt19937(seed_);
 	
 	NewGame();
 	
@@ -361,6 +360,14 @@ void GameStateGamePlay::NewGame(void)
 	
 	score_ = 0;
 	level_ = 0;
+	
+	numCompleteLines_ = 0;
+	numLines_ = 0;
+	
+	numSingles_ = 0;
+	numDoubles_ = 0;
+	numTriples_ = 0;
+	numQuadruples_ = 0;
 	
 	lockDelayTicks_ = GAMEPLAY_LOCK_DELAY_TICKS;
 	
@@ -550,6 +557,20 @@ void GameStateGamePlay::DrawGameOver(void)
 		app_->DrawString(((FRAME_WIDTH / TILE_SIZE) >> 1) - 5, ((FRAME_HEIGHT / TILE_SIZE) >> 1) - 4, "GAME OVER");
 }
 
+#ifdef DEBUG
+	void GameStateGamePlay::DrawDebugInfo(void)
+	{
+		int y = 1;
+		
+		app_->DrawInt(1, y++, gamestate_);
+		app_->DrawInt(1, y++, numLines_);
+		app_->DrawInt(1, y++, numQuadruples_);
+		app_->DrawInt(1, y++, numTriples_);
+		app_->DrawInt(1, y++, numDoubles_);
+		app_->DrawInt(1, y++, numSingles_);
+	}
+#endif
+
 void GameStateGamePlay::OnTick(void)
 {
 	if (gamestate_ == GAMEPLAY_STATE_PLAYING)
@@ -604,12 +625,7 @@ void GameStateGamePlay::OnTick(void)
 
 		if (gamestate_ == GAMEPLAY_STATE_PLAYING)
 		{
-			real tickInc = real(0.5 - (level_ * 0.05));
-			
-			if (tickInc < real(0.1))
-				tickInc = real(0.1);
-			
-			nextTick_ += tickInc;
+			nextTick_ += real(MAX((11 - level_) * 0.05, 0.05));
 		}
 	}
 	else if (gamestate_ == GAMEPLAY_STATE_SCORING)
@@ -861,7 +877,7 @@ Shape* GameStateGamePlay::DraftShape(void)
 	
 	do
 	{
-		int idx = rand() % numShapes_;
+		int idx = (uniform_int_distribution<int>(0, numShapes_ - 1))(rand_);
 		
 		if (!shapePlayed_[idx])
 		{
@@ -1098,12 +1114,14 @@ void GameStateGamePlay::UpdateScore(void)
 	
 	if (singles)
 	{
+		numSingles_ += singles;
 		score_ += singles * 5;
 		droppedAQuad_ = false;
 	}
 	
 	if (dubs)
 	{
+		numDoubles_ += dubs;
 		score_ += dubs * 15;
 		messages_.push_back("DOUBLE");
 		droppedAQuad_ = false;
@@ -1111,6 +1129,7 @@ void GameStateGamePlay::UpdateScore(void)
 	
 	if (trips)
 	{
+		numTriples_ += trips;
 		score_ += trips * 25;
 		messages_.push_back("TRIPLE");
 		droppedAQuad_ = false;
@@ -1118,6 +1137,8 @@ void GameStateGamePlay::UpdateScore(void)
 	
 	if (quads)
 	{
+		numQuadruples_ += quads;
+		
 		if (droppedAQuad_)
 		{
 			score_ += quads * 75;
@@ -1132,6 +1153,8 @@ void GameStateGamePlay::UpdateScore(void)
 		droppedAQuad_ = true;
 	}
 	
+	numLines_ += singles + (dubs * 2) + (trips * 3) + (quads * 4);
+	
 	int oldLevel = level_;
 	
 	CalculateLevel();
@@ -1144,23 +1167,17 @@ void GameStateGamePlay::UpdateScore(void)
 
 void GameStateGamePlay::CalculateLevel(void)
 {
-	int base = 2;
-	int exp = 5;
-	
 	int newLevel = 0;
+	int lines = numLines_;
 	
-	int product = 0;
-	
-	int score = score_;
-	
-	while (score > 0)
+	while (lines > 0)
 	{
-		product = int(powf(base, exp++));
+		int sub = 10 + (5 * newLevel);
 		
-		if (score < product)
+		if (lines < sub)
 			break;
-
-		score -= product;
+		
+		lines -= sub;
 		newLevel++;
 	}
 	

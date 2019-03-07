@@ -53,6 +53,9 @@ public:
 	
 protected:
 	bool initialized_;
+	
+	mt19937::result_type seed_;
+	mt19937	rand_;
 
 	vector<const char*> messages_;
 	
@@ -92,6 +95,13 @@ protected:
 	
 	int numCompleteLines_;
 	
+	unsigned short numLines_;
+	
+	unsigned short numSingles_;
+	unsigned short numDoubles_;
+	unsigned short numTriples_;
+	unsigned short numQuadruples_;
+	
 	void PositionShapeAtSpawn(Shape* shape);
 	void ClampShape(Shape* shape);
 	
@@ -128,6 +138,10 @@ protected:
 	void DrawPlayfield(void);
 	void DrawPause(void);
 	void DrawGameOver(void);
+	
+#ifdef DEBUG
+	void DrawDebugInfo(void);
+#endif
 };
 
 #endif

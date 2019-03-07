@@ -521,6 +521,16 @@ void Application::DrawString(int x, int y, const char* str)
 	}
 }
 
+void Application::DrawInt(int x, int y, int num)
+{
+	char buffer[256];
+	
+	memset(buffer, ZERO, sizeof(buffer));
+	snprintf(buffer, sizeof(buffer)/sizeof(char), "%i", num);
+	
+	DrawString(x, y, buffer);
+}
+
 void Application::DrawBox(int x, int y, int w, int h)
 {
 	int ix, iy;
