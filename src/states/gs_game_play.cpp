@@ -1198,13 +1198,13 @@ void GameStateGamePlay::CalculateLevel(void)
 	int newLevel = 0;
 	int lines = numLines_;
 	
-	while (true)
+	while (lines > 0)
 	{
 		int val = 10 + (5 * newLevel);
 		
 		if (lines >= val)
 		{
-			newLevel++;
+			lines -= val;
 		}
 		else
 		{
