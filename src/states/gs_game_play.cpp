@@ -32,7 +32,8 @@ GameStateGamePlay::GameStateGamePlay(Application* app)
 	numQuadruples_(0),
 	numLines_(0),
 	seed_(time(0)),
-	rand_(seed_)
+	rand_(seed_),
+	recentShapes_(nullptr)
 {	
 }
 
@@ -87,6 +88,12 @@ GameStateGamePlay::~GameStateGamePlay(void)
 	{
 		delete [] shapePlayed_;
 		shapePlayed_ = nullptr;
+	}
+	
+	if (recentShapes_)
+	{
+		delete [] recentShapes_;
+		recentShapes_ = nullptr;
 	}
 }
 
@@ -335,11 +342,14 @@ void GameStateGamePlay::OnInitialize(void)
 	numShapes_ = SHAPE_COUNT;
 	shapePlayed_ = new bool[numShapes_];
 	shapes_ = new Shape*[numShapes_];
+	recentShapes_ = new Shape*[GAMEPLAY_NUM_RECENT_SHAPES];
 	
 	for (unsigned int i = 0; i < numShapes_; i++)
 	{
 		shapes_[i] = new Shape(app_, &SHAPES[i]);
 	}
+	
+	memset(recentShapes_, ZERO, sizeof(Shape*)*GAMEPLAY_NUM_RECENT_SHAPES);
 	
 	seed_ = time(0);
 	rand_ = mt19937(seed_);
@@ -357,6 +367,8 @@ void GameStateGamePlay::NewGame(void)
 	}
 	
 	memset(playfield_, ZERO, sizeof(unsigned char) * (playfieldWidth_ * playfieldHeight_));
+	
+	memset(recentShapes_, ZERO, sizeof(Shape*) * GAMEPLAY_NUM_RECENT_SHAPES);
 	
 	score_ = 0;
 	level_ = 0;
@@ -879,7 +891,7 @@ Shape* GameStateGamePlay::DraftShape(void)
 	{
 		int idx = (uniform_int_distribution<int>(0, numShapes_ - 1))(rand_);
 		
-		if (!shapePlayed_[idx])
+		if (!shapePlayed_[idx] && !IsRecentShape(shapes_[idx]))
 		{
 			result = shapes_[idx];
 			shapePlayed_[idx] = true;
@@ -887,20 +899,7 @@ Shape* GameStateGamePlay::DraftShape(void)
 		}
 	} while (true);
 	
-#if 0
-	int mostBottomY = 0;
-	
-	for (unsigned int y = 0; y < SHAPE_HEIGHT; y++)
-	{
-		for (unsigned int x = 0; x < SHAPE_WIDTH; x++)
-		{
-			if (currentShape_->GetShapeTile(x, y) & 1)
-			{
-				mostBottomY = y;
-			}
-		}
-	}
-#endif
+	AddRecentShape(result);
 	
 	return result;
 }
@@ -959,6 +958,35 @@ void GameStateGamePlay::DrawShape(const Shape* shape, unsigned char alpha)
 		SDL_RenderDrawRect(app_->GetRenderer(), &r);
 #endif
 	}
+}
+
+void GameStateGamePlay::AddRecentShape(Shape* shape)
+{
+	if (shape)
+	{
+		for (int i = 0; i < GAMEPLAY_NUM_RECENT_SHAPES - 1; i++)
+		{
+			recentShapes_[i] = recentShapes_[i + 1];
+		}
+		
+		recentShapes_[GAMEPLAY_NUM_RECENT_SHAPES - 1] = shape;
+	}
+}
+
+bool GameStateGamePlay::IsRecentShape(const Shape* shape) const
+{
+	bool result = false;
+	
+	for (int i = 0; i < GAMEPLAY_NUM_RECENT_SHAPES; i++)
+	{
+		if (const_cast<Shape*>(recentShapes_[i]) == shape)
+		{
+			result = true;
+			break;
+		}
+	}
+	
+	return result;
 }
 
 void GameStateGamePlay::UpdateGhostShape(void)
@@ -1170,15 +1198,18 @@ void GameStateGamePlay::CalculateLevel(void)
 	int newLevel = 0;
 	int lines = numLines_;
 	
-	while (lines > 0)
+	while (true)
 	{
-		int sub = 10 + (5 * newLevel);
+		int val = 10 + (5 * newLevel);
 		
-		if (lines < sub)
+		if (lines >= val)
+		{
+			newLevel++;
+		}
+		else
+		{
 			break;
-		
-		lines -= sub;
-		newLevel++;
+		}
 	}
 	
 	level_ = newLevel;

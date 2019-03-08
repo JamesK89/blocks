@@ -9,6 +9,8 @@
 
 using namespace std;
 
+#define GAMEPLAY_NUM_RECENT_SHAPES	4
+
 #define GAMEPLAY_STATE_PLAYING		0
 #define GAMEPLAY_STATE_PAUSED		1
 #define GAMEPLAY_STATE_GAME_OVER	2
@@ -82,6 +84,7 @@ protected:
 	Shape** shapes_;
 	unsigned int numShapes_;
 	bool* shapePlayed_;
+	Shape** recentShapes_;
 	
 	real nextTick_;
 	real messageTick_;
@@ -131,6 +134,9 @@ protected:
 	void DrawShape(const Shape* shape, unsigned char alpha = 0xFF);
 	
 	void UpdateGhostShape(void);
+	
+	void AddRecentShape(Shape* shape);
+	bool IsRecentShape(const Shape* shape) const;
 	
 	void DrawLevel(void);
 	void DrawScore(void);
